@@ -57,18 +57,18 @@ export class Player {
                 const compressed = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
                 const jsonString = pako.inflate(compressed, { to: 'string' });
                 const data = JSON.parse(jsonString);
-
-                // --- V5 负载处理 ---
+                
                 const baseUrl = data.b || '';
 
                 this._updateWorkInfo(data, baseUrl);
                 
                 if (data.t && Array.isArray(data.t)) {
-                    // 使用新的键名 p 和 n
+                    // --- 修复：使用正确的键名 'n' (name) ---
                     this.state.tracks = data.t.map(track => ({
                         src: baseUrl + track.p, 
-                        title: track.n 
+                        title: track.n // 原来是 track.t，已修正
                     }));
+                    // --- 修复结束 ---
                     this._buildPlaylist();
                     this.loadTrack(0);
                 } else { throw new Error('Payload中音轨数据格式不正确'); }
@@ -94,8 +94,7 @@ export class Player {
             this.elements.rjCode.textContent = data.r;
         }
     }
-
-    // ... (其余代码与上一个版本完全相同)
+    
     _bindEventListeners() {
         this.audio.addEventListener('play', () => {
             this._updatePlayPauseUI(true);
