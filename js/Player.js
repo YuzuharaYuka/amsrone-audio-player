@@ -57,18 +57,23 @@ export class Player {
                 const compressed = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
                 const jsonString = pako.inflate(compressed, { to: 'string' });
                 const data = JSON.parse(jsonString);
-                
+
                 const baseUrl = data.b || '';
 
                 this._updateWorkInfo(data, baseUrl);
                 
                 if (data.t && Array.isArray(data.t)) {
-                    // --- 修复：使用正确的键名 'n' (name) ---
-                    this.state.tracks = data.t.map(track => ({
-                        src: baseUrl + track.p, 
-                        title: track.n // 原来是 track.t，已修正
-                    }));
-                    // --- 修复结束 ---
+                    // --- V6 修复与适配：从数组 [path, name] 中解析 ---
+                    this.state.tracks = data.t.map(trackArray => {
+                        // 假设 trackArray 是 [path, name]
+                        const relativePath = trackArray[0];
+                        const trackName = trackArray[1];
+                        return {
+                            src: baseUrl + relativePath, 
+                            title: trackName
+                        };
+                    });
+                    // --- 适配结束 ---
                     this._buildPlaylist();
                     this.loadTrack(0);
                 } else { throw new Error('Payload中音轨数据格式不正确'); }
@@ -126,9 +131,11 @@ export class Player {
         this.elements.customTimerSetBtn.addEventListener('click', this._handleCustomTimerSet);
         this.elements.customTimerCancelBtn.addEventListener('click', this._hideCustomTimerModal);
     }
+
     togglePlayPause = () => {
         if (!this.audioContextInitialized) this._initWebAudio();
         if (this.audioContext.state === 'suspended') this.audioContext.resume();
+        
         if (this.state.isPlaying) {
             this.audio.pause();
             this._updatePlayPauseUI(false);
@@ -136,6 +143,7 @@ export class Player {
             this.audio.play();
         }
     }
+    
     _initWebAudio() {
         if (this.audioContextInitialized) return;
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -147,6 +155,7 @@ export class Player {
         this._setVolume(this.state.currentVolume);
         this.audioContextInitialized = true;
     }
+
     _setVolume(value) {
         const newVolume = parseInt(value, 10);
         this.state.currentVolume = newVolume;
@@ -154,6 +163,7 @@ export class Player {
         if (newVolume > 0) { this.state.isMuted = false; }
         this._updateVolumeUI();
     }
+
     _toggleMute = () => {
         if (this.state.isMuted) {
             const volumeToRestore = this.state.preMuteVolume > 0 ? this.state.preMuteVolume : 100;
@@ -165,12 +175,14 @@ export class Player {
             this.state.isMuted = true;
         }
     }
+
     _updateVolumeUI = () => {
         this.elements.volumeSlider.value = this.state.currentVolume;
         if (this.state.currentVolume === 0) { this.elements.volumeBtn.innerHTML = ICONS.volume.off; } 
         else if (this.state.currentVolume < 50) { this.elements.volumeBtn.innerHTML = ICONS.volume.low; } 
         else { this.elements.volumeBtn.innerHTML = ICONS.volume.high; }
     }
+    
     loadTrack(index, autoPlay = false) {
         if (index < 0 || index >= this.state.tracks.length) return;
         this._abortPreload();
@@ -204,6 +216,7 @@ export class Player {
             this.audio.play().catch(e => console.error("Playback failed:", e));
         }
     }
+
     _triggerPreload() {
         setTimeout(() => {
             if (this.state.isPlaying) {
@@ -211,11 +224,13 @@ export class Player {
             }
         }, 2000);
     }
+
     _abortPreload() {
         if (this.state.isPreloading && this.state.preloadAbortController) {
             this.state.preloadAbortController.abort();
         }
     }
+
     async _preloadNextTrack() {
         if (this.state.isPreloading) return;
         let nextIndex = -1;
@@ -245,6 +260,7 @@ export class Player {
             this.state.preloadAbortController = null;
         }
     }
+
     _updateBufferProgress = () => {
         const audio = this.audio;
         if (audio.duration > 0 && audio.buffered.length > 0) {
@@ -253,6 +269,7 @@ export class Player {
             this.elements.progressBuffered.style.width = `${bufferedPercent}%`;
         }
     }
+
     _updateProgress = () => {
         this._updateBufferProgress();
         const { duration, currentTime } = this.audio;
@@ -262,6 +279,7 @@ export class Player {
             this.elements.totalDuration.textContent = this._formatTime(duration);
         }
     }
+
     nextTrack = () => { this.loadTrack((this.state.currentIndex + 1) % this.state.tracks.length, this.state.isPlaying); }
     prevTrack = () => { this.loadTrack((this.state.currentIndex - 1 + this.state.tracks.length) % this.state.tracks.length, this.state.isPlaying); }
     seek = (delta) => { this.audio.currentTime = Math.max(0, this.audio.currentTime + delta); }
