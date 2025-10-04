@@ -1,0 +1,360 @@
+const ICONS = {
+    rewind: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 4.5v15l-8-7.5 8-7.5zm-1 2.69L7.44 12l4.06 4.81V7.19zM20.5 4.5v15l-8-7.5 8-7.5zm-1 2.69L15.44 12l4.06 4.81V7.19z"/></svg>`,
+    forward: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 19.5v-15l8 7.5-8 7.5zm1-2.69L8.56 12 5 7.19v9.62zM12 19.5v-15l8 7.5-8 7.5zm1-2.69L16.56 12 13 7.19v9.62z"/></svg>`,
+    prev: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>`,
+    next: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>`,
+    download: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>`,
+    volume: {
+        high: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>`,
+        low: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z"/></svg>`,
+        off: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>`
+    },
+    playModes: {
+        sequential: { icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" /></svg>`, title: '顺序播放'},
+        repeat_list: { icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>`, title: '列表循环'},
+        repeat_one: { icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4zm-4-2V9h-1v4h-1v2h2v-2z"/></svg>`, title: '单曲循环'},
+        shuffle: { icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>`, title: '随机播放'},
+    }
+};
+
+class Player {
+    constructor() {
+        this.elements = {};
+        this.state = {
+            tracks: [], currentIndex: -1, isPlaying: false, isSeeking: false,
+            sleepTimerId: null, sleepTimerRemaining: 0, 
+            currentVolume: 100, isMuted: false, preMuteVolume: 100,
+            playMode: 'sequential', errorTracks: new Set()
+        };
+        this.PLAY_MODES = ['sequential', 'repeat_list', 'repeat_one', 'shuffle'];
+        this.audioContext = null; this.gainNode = null; this.audioSource = null;
+        this.audioContextInitialized = false;
+
+        this._cacheDOMElements();
+        this.audio = this.elements.audio;
+        this._init();
+    }
+
+    _init() {
+        this._applyTheme(localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+        this._parseDataFromURL();
+        this._setupIcons();
+        this._bindEventListeners();
+        this._updateVolumeUI();
+    }
+    
+    _cacheDOMElements() {
+        const $ = (id) => document.getElementById(id);
+        this.elements = {
+            backgroundArt: $('background-art'), status: $('status'), workTitle: $('work-title'),
+            coverArt: $('cover-art'), rjCode: $('rj-code-display'), currentTrackTitle: $('current-track-title'),
+            audio: $('audio-player'), playlist: $('playlist'), prevBtn: $('prev-track'), nextBtn: $('next-track'),
+            rewindBtn: $('rewind-btn'), forwardBtn: $('forward-btn'), rateSelector: $('playback-rate'),
+            themeToggleBtn: $('theme-toggle'), downloadBtn: $('download-track'), playPauseBtn: $('play-pause-btn'),
+            playIcon: $('play-icon'), pauseIcon: $('pause-icon'), progressContainer: $('progress-bar-container'),
+            progressFilled: $('progress-filled'), currentTime: $('current-time'), totalDuration: $('total-duration'),
+            playModeBtn: $('play-mode-btn'), sleepTimerSelect: $('sleep-timer-select'), sleepTimerDisplay: $('sleep-timer-display'),
+            volumeBtn: $('volume-btn'), volumeSlider: $('volume-slider'),
+            customTimerModal: $('custom-timer-modal'), customTimerInput: $('custom-timer-input'),
+            customTimerSetBtn: $('custom-timer-set'), customTimerCancelBtn: $('custom-timer-cancel'),
+        };
+    }
+
+    _parseDataFromURL() {
+         try {
+            const params = new URLSearchParams(window.location.search);
+            const payloadParam = params.get('p');
+            if (payloadParam) {
+                const base64 = payloadParam.replace(/-/g, '+').replace(/_/g, '/');
+                const compressed = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+                const jsonString = pako.inflate(compressed, { to: 'string' });
+                const data = JSON.parse(jsonString);
+                this._updateWorkInfo(data);
+                if (data.t && Array.isArray(data.t)) {
+                    this.state.tracks = data.t.map(track => ({ src: track.u, title: track.t }));
+                    this._buildPlaylist();
+                    this.loadTrack(0);
+                } else { throw new Error('Payload中音轨数据格式不正确'); }
+            } else { this._setError('未提供播放数据'); }
+        } catch (e) {
+            this._setError('加载播放列表失败，链接可能已损坏');
+            console.error("Payload processing error:", e);
+        }
+    }
+
+    _bindEventListeners() {
+        this.audio.addEventListener('play', () => this._updatePlayPauseUI(true));
+        this.audio.addEventListener('ended', this._handleTrackEnd);
+        this.audio.addEventListener('timeupdate', this._updateProgress);
+        this.audio.addEventListener('loadedmetadata', this._updateProgress);
+        this.audio.addEventListener('error', this._handleAudioError);
+        
+        this.elements.playPauseBtn.addEventListener('click', this.togglePlayPause);
+        this.elements.prevBtn.addEventListener('click', this.prevTrack);
+        this.elements.nextBtn.addEventListener('click', this.nextTrack);
+        this.elements.rewindBtn.addEventListener('click', () => this.seek(-10));
+        this.elements.forwardBtn.addEventListener('click', () => this.seek(10));
+        this.elements.rateSelector.addEventListener('change', (e) => this.audio.playbackRate = parseFloat(e.target.value));
+        this.elements.downloadBtn.addEventListener('click', this._downloadCurrentTrack);
+        this.elements.themeToggleBtn.addEventListener('click', () => this._applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
+        this.elements.playModeBtn.addEventListener('click', this._cyclePlayMode);
+        this.elements.sleepTimerSelect.addEventListener('change', this._handleSleepTimerChange);
+        this.elements.volumeBtn.addEventListener('click', this._toggleMute);
+        this.elements.volumeSlider.addEventListener('input', (e) => this._setVolume(e.target.value));
+        this.elements.playlist.addEventListener('click', this._handlePlaylistClick);
+        this.elements.progressContainer.addEventListener('mousedown', this._startSeek);
+        window.addEventListener('mousemove', this._seeking);
+        window.addEventListener('mouseup', this._endSeek);
+        window.addEventListener('keydown', this._handleKeyDown);
+        this.elements.customTimerSetBtn.addEventListener('click', this._handleCustomTimerSet);
+        this.elements.customTimerCancelBtn.addEventListener('click', this._hideCustomTimerModal);
+    }
+
+    togglePlayPause = () => {
+        if (!this.audioContextInitialized) this._initWebAudio();
+        if (this.audioContext.state === 'suspended') this.audioContext.resume();
+        
+        if (this.state.isPlaying) {
+            this.audio.pause();
+            this._updatePlayPauseUI(false);
+        } else {
+            this.audio.play();
+        }
+    }
+    
+    _initWebAudio() {
+        if (this.audioContextInitialized) return;
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        this.audioSource = this.audioContext.createMediaElementSource(this.audio);
+        this.gainNode = this.audioContext.createGain();
+        this.audioSource.connect(this.gainNode);
+        this.gainNode.connect(this.audioContext.destination);
+        this.audio.volume = 1;
+        this._setVolume(this.state.currentVolume, true);
+        this.audioContextInitialized = true;
+    }
+
+    _setVolume(value) {
+        const newVolume = parseInt(value, 10);
+        this.state.currentVolume = newVolume;
+        
+        if (this.audioContextInitialized) {
+            this.gainNode.gain.value = newVolume / 100;
+        }
+
+        if (newVolume > 0) {
+            this.state.isMuted = false;
+        }
+
+        this._updateVolumeUI();
+    }
+
+    _toggleMute = () => {
+        if (this.state.isMuted) {
+            const volumeToRestore = this.state.preMuteVolume > 0 ? this.state.preMuteVolume : 100;
+            this._setVolume(volumeToRestore);
+            this.state.isMuted = false;
+        } else {
+            this.state.preMuteVolume = this.state.currentVolume;
+            this._setVolume(0);
+            this.state.isMuted = true;
+        }
+    }
+
+    _updateVolumeUI = () => {
+        this.elements.volumeSlider.value = this.state.currentVolume;
+        if (this.state.currentVolume === 0) {
+            this.elements.volumeBtn.innerHTML = ICONS.volume.off;
+        } else if (this.state.currentVolume < 50) {
+            this.elements.volumeBtn.innerHTML = ICONS.volume.low;
+        } else {
+            this.elements.volumeBtn.innerHTML = ICONS.volume.high;
+        }
+    }
+    
+    loadTrack(index, autoPlay = false) {
+        if (index < 0 || index >= this.state.tracks.length) return;
+        this.state.currentIndex = index;
+        this.audio.src = this.state.tracks[index].src;
+        this.elements.currentTrackTitle.textContent = this.state.tracks[index].title;
+        this._updatePlaylistActive();
+        if (autoPlay) {
+            if (!this.audioContextInitialized) this._initWebAudio();
+            if (this.audioContext.state === 'suspended') this.audioContext.resume();
+            this.audio.play();
+        }
+    }
+    nextTrack = () => { this.loadTrack((this.state.currentIndex + 1) % this.state.tracks.length, this.state.isPlaying); }
+    prevTrack = () => { this.loadTrack((this.state.currentIndex - 1 + this.state.tracks.length) % this.state.tracks.length, this.state.isPlaying); }
+    seek = (delta) => { this.audio.currentTime = Math.max(0, this.audio.currentTime + delta); }
+    _handleTrackEnd = () => {
+        switch (this.state.playMode) {
+            case 'repeat_one': this.audio.play(); break;
+            case 'shuffle':
+                let newIndex;
+                if (this.state.tracks.length <= 1) { newIndex = 0; }
+                else { do { newIndex = Math.floor(Math.random() * this.state.tracks.length); } while (newIndex === this.state.currentIndex); }
+                this.loadTrack(newIndex, true);
+                break;
+            case 'sequential':
+                if (this.state.currentIndex < this.state.tracks.length - 1) { this.nextTrack(); }
+                else { this._updatePlayPauseUI(false); }
+                break;
+            case 'repeat_list': this.nextTrack(); break;
+        }
+    }
+    _updateWorkInfo(data) {
+        if (data.c) {
+            this.elements.coverArt.src = data.c;
+            this.elements.backgroundArt.style.backgroundImage = `url(${data.c})`;
+            this.elements.backgroundArt.style.opacity = '1';
+        }
+        if (data.w) {
+            this.elements.workTitle.textContent = data.w;
+            document.title = `${data.w} | ASMR ONE Player`;
+        }
+        if (data.r) this.elements.rjCode.textContent = data.r;
+    }
+    _buildPlaylist() {
+        this.elements.playlist.innerHTML = this.state.tracks.map((track, i) => `<li data-index="${i}"><span class="track-index">${i + 1}.</span><span class="track-title">${track.title}</span></li>`).join('');
+    }
+    _updatePlaylistActive() {
+         this.elements.playlist.querySelectorAll('li').forEach((li, i) => li.classList.toggle('active', i === this.state.currentIndex));
+    }
+    _updatePlayPauseUI = (playing) => {
+        this.state.isPlaying = playing;
+        this.elements.playIcon.style.display = this.state.isPlaying ? 'none' : 'block';
+        this.elements.pauseIcon.style.display = this.state.isPlaying ? 'block' : 'none';
+        const statusText = `(音轨 ${this.state.currentIndex + 1}/${this.state.tracks.length})`;
+        this.elements.status.textContent = this.state.isPlaying ? `播放中... ${statusText}` : `已暂停 ${statusText}`;
+    }
+    _updateProgress = () => {
+        const { duration, currentTime } = this.audio;
+        if (!isNaN(duration)) {
+            this.elements.progressFilled.style.width = `${(currentTime / duration) * 100}%`;
+            this.elements.currentTime.textContent = this._formatTime(currentTime);
+            this.elements.totalDuration.textContent = this._formatTime(duration);
+        }
+    }
+    _updatePlayModeUI = () => {
+        const mode = ICONS.playModes[this.state.playMode];
+        this.elements.playModeBtn.innerHTML = mode.icon;
+        this.elements.playModeBtn.title = mode.title;
+    }
+    _setupIcons() {
+        this.elements.rewindBtn.innerHTML = ICONS.rewind;
+        this.elements.forwardBtn.innerHTML = ICONS.forward;
+        this.elements.prevBtn.innerHTML = ICONS.prev;
+        this.elements.nextBtn.innerHTML = ICONS.next;
+        this.elements.downloadBtn.innerHTML = ICONS.download;
+        this._updatePlayModeUI();
+    }
+    _handlePlaylistClick = (e) => {
+        const targetLi = e.target.closest('li');
+        if (targetLi && !targetLi.classList.contains('track-error')) {
+            const index = parseInt(targetLi.dataset.index, 10);
+            this.loadTrack(index, true);
+        }
+    }
+    _startSeek = (e) => { this.state.isSeeking = true; this._handleProgressSeek(e); }
+    _seeking = (e) => { if (this.state.isSeeking) { this._handleProgressSeek(e); this._updateProgress(); } }
+    _endSeek = () => { if (this.state.isSeeking) this.state.isSeeking = false; }
+    _handleProgressSeek = (e) => {
+        const rect = this.elements.progressContainer.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const newTime = Math.max(0, Math.min(1, clickX / rect.width)) * this.audio.duration;
+        if (!isNaN(newTime)) this.audio.currentTime = newTime;
+    }
+    _handleKeyDown = (e) => {
+        if (['INPUT', 'SELECT'].includes(document.activeElement.tagName)) return;
+        if (e.key === ' ') { e.preventDefault(); this.togglePlayPause(); }
+        if (e.key === 'ArrowRight') { e.preventDefault(); this.seek(10); }
+        if (e.key === 'ArrowLeft') { e.preventDefault(); this.seek(-10); }
+    }
+    _cyclePlayMode = () => {
+        const currentModeIndex = this.PLAY_MODES.indexOf(this.state.playMode);
+        this.state.playMode = this.PLAY_MODES[(currentModeIndex + 1) % this.PLAY_MODES.length];
+        this._updatePlayModeUI();
+    }
+    _handleSleepTimerChange = (e) => {
+        const minutes = parseInt(e.target.value, 10);
+        if (minutes === -1) { this._showCustomTimerModal(); }
+        else if (minutes > 0) { this._setSleepTimer(minutes); }
+        else { this._clearSleepTimer(); }
+    }
+    _handleAudioError = () => {
+        this._setError(`音轨 ${this.state.currentIndex + 1} 加载失败, 3秒后尝试下一首...`);
+        this.state.errorTracks.add(this.state.currentIndex);
+        const erroredLi = this.elements.playlist.querySelector(`li[data-index="${this.state.currentIndex}"]`);
+        if (erroredLi) erroredLi.classList.add('track-error');
+        if (this.state.errorTracks.size >= this.state.tracks.length) {
+            this._setError('所有音轨均加载失败，请检查链接或网络。');
+            return;
+        }
+        setTimeout(() => {
+            let nextIndex = (this.state.currentIndex + 1) % this.state.tracks.length;
+            while(this.state.errorTracks.has(nextIndex) && nextIndex !== this.state.currentIndex) {
+                nextIndex = (nextIndex + 1) % this.state.tracks.length;
+            }
+            this.loadTrack(nextIndex, true);
+        }, 3000);
+    }
+    _applyTheme(theme) { document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('theme', theme); }
+    _setError(msg) { this.elements.status.textContent = msg; }
+    _formatTime = (seconds) => {
+        if (isNaN(seconds) || seconds < 0) return '00:00';
+        const date = new Date(null); date.setSeconds(seconds);
+        const isoString = date.toISOString();
+        return seconds >= 3600 ? isoString.substr(11, 8) : isoString.substr(14, 5);
+    }
+    _downloadCurrentTrack = () => {
+        if (this.state.currentIndex < 0) return;
+        const { src, title } = this.state.tracks[this.state.currentIndex];
+        const a = document.createElement('a'); a.href = src; a.download = title || 'audio.wav';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
+    _setSleepTimer(minutes) {
+        this._clearSleepTimer();
+        this.state.sleepTimerRemaining = minutes * 60;
+        this.state.sleepTimerId = setInterval(this._updateSleepTimerDisplay, 1000);
+    }
+    _clearSleepTimer() {
+        if (this.state.sleepTimerId) { clearInterval(this.state.sleepTimerId); this.state.sleepTimerId = null; }
+        this.elements.sleepTimerDisplay.textContent = '';
+    }
+    _updateSleepTimerDisplay = () => {
+        if (this.state.sleepTimerRemaining <= 0) {
+            this.audio.pause();
+            this._updatePlayPauseUI(false);
+            this.elements.sleepTimerSelect.value = "0";
+            this._clearSleepTimer();
+        } else {
+            this.state.sleepTimerRemaining--;
+            const mins = Math.floor(this.state.sleepTimerRemaining / 60);
+            const secs = this.state.sleepTimerRemaining % 60;
+            this.elements.sleepTimerDisplay.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+    }
+    _showCustomTimerModal = () => {
+        this.elements.customTimerInput.value = '';
+        this.elements.customTimerModal.classList.add('visible');
+        this.elements.customTimerInput.focus();
+    }
+    _hideCustomTimerModal = () => {
+        this.elements.customTimerModal.classList.remove('visible');
+        if (this.elements.sleepTimerSelect.value === "-1") {
+            this.elements.sleepTimerSelect.value = "0";
+        }
+    }
+    _handleCustomTimerSet = () => {
+        const minutes = parseInt(this.elements.customTimerInput.value, 10);
+        if (!isNaN(minutes) && minutes > 0) {
+            this._setSleepTimer(minutes);
+            this._hideCustomTimerModal();
+        } else {
+            this.elements.customTimerInput.style.border = '1px solid red';
+            setTimeout(() => { this.elements.customTimerInput.style.border = ''; }, 1500);
+        }
+    }
+}
+document.addEventListener('DOMContentLoaded', () => { new Player(); });
