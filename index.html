@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ASMR ONE 在线播放器</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
     <style>
         :root {
             --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
@@ -260,25 +261,48 @@
             const init = () => {
                 applyTheme(localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
                 
+                // [已重构] URL参数解析逻辑
                 try {
                     const params = new URLSearchParams(window.location.search);
-                    const [audioUrls, audioTitles, workTitle, coverUrl, rjCode] = [params.getAll('audio'), params.getAll('title'), params.get('workTitle'), params.get('cover'), params.get('rjCode')];
-                    
-                    if (coverUrl) {
-                        const decodedCoverUrl = decodeURIComponent(coverUrl);
-                        elements.coverArt.src = decodedCoverUrl;
-                        elements.backgroundArt.style.backgroundImage = `url(${decodedCoverUrl})`;
-                        elements.backgroundArt.style.opacity = '1';
-                    }
-                    if (workTitle) elements.workTitle.textContent = decodeURIComponent(workTitle);
-                    if (rjCode) elements.rjCode.textContent = decodeURIComponent(rjCode);
+                    const payload = params.get('p');
 
-                    if (audioUrls.length && audioUrls.length === audioTitles.length) {
-                        state.tracks = audioUrls.map((url, i) => ({ src: decodeURIComponent(url), title: decodeURIComponent(audioTitles[i]) }));
-                        buildPlaylist();
-                        loadTrack(0);
-                    } else { setError('未提供有效的音频数据'); }
-                } catch (e) { setError('链接参数解析失败'); console.error(e); }
+                    if (payload) {
+                        // 1. Base64解码
+                        const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+                        const compressed = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+                        
+                        // 2. Pako解压缩
+                        const jsonString = pako.inflate(compressed, { to: 'string' });
+
+                        // 3. 解析JSON数据
+                        const data = JSON.parse(jsonString);
+
+                        if (data.c) {
+                            elements.coverArt.src = data.c;
+                            elements.backgroundArt.style.backgroundImage = `url(${data.c})`;
+                            elements.backgroundArt.style.opacity = '1';
+                        }
+                        if (data.w) elements.workTitle.textContent = data.w;
+                        if (data.r) elements.rjCode.textContent = data.r;
+
+                        if (data.b && data.t && data.t.length > 0) {
+                            // 4. 重建完整的音轨列表
+                            state.tracks = data.t.map(track => ({
+                                src: data.b + track.f, // 组合 baseUrl 和 filename
+                                title: track.t
+                            }));
+                            buildPlaylist();
+                            loadTrack(0);
+                        } else {
+                            setError('数据负载不完整');
+                        }
+                    } else {
+                        setError('未提供播放数据');
+                    }
+                } catch (e) {
+                    setError('加载播放列表失败，链接可能已损坏');
+                    console.error("Payload processing error:", e);
+                }
                 
                 setupEventListeners();
                 setupIcons();
