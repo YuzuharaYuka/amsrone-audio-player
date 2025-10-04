@@ -213,7 +213,7 @@
                     <p id="status">正在初始化...</p>
                 </div>
                 
-                <audio id="audio-player"></audio>
+                <audio id="audio-player" crossorigin="anonymous"></audio>
 
                 <div class="custom-audio-player">
                     <div class="progress-bar-container" id="progress-bar-container">
@@ -237,7 +237,6 @@
                 <div class="extra-controls">
                     <div class="volume-control">
                         <button id="volume-btn" title="静音"></button>
-                        <!-- 问题3 修改：将max值改为150 -->
                         <input type="range" id="volume-slider" class="volume-slider" min="0" max="150" value="100">
                     </div>
                     <div class="secondary-controls">
@@ -276,7 +275,6 @@
     
     <script>
         const ICONS = {
-            // 问题1 修复：替换为更合适的快进/快退图标
             rewind: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 4.5v15l-8-7.5 8-7.5zm-1 2.69L7.44 12l4.06 4.81V7.19zM20.5 4.5v15l-8-7.5 8-7.5zm-1 2.69L15.44 12l4.06 4.81V7.19z"/></svg>`,
             forward: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 19.5v-15l8 7.5-8 7.5zm1-2.69L8.56 12 5 7.19v9.62zM12 19.5v-15l8 7.5-8 7.5zm1-2.69L16.56 12 13 7.19v9.62z"/></svg>`,
             prev: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>`,
@@ -300,15 +298,12 @@
                 this.elements = {};
                 this.state = {
                     tracks: [], currentIndex: -1, isPlaying: false, isSeeking: false,
-                    sleepTimerId: null, sleepTimerRemaining: 0, preMuteVolume: 1,
+                    sleepTimerId: null, sleepTimerRemaining: 0, 
+                    currentVolume: 100, isMuted: false, // 新增：用于管理音量状态
                     playMode: 'sequential', errorTracks: new Set()
                 };
                 this.PLAY_MODES = ['sequential', 'repeat_list', 'repeat_one', 'shuffle'];
-                
-                // 问题3 新增：Web Audio API 相关属性
-                this.audioContext = null;
-                this.gainNode = null;
-                this.audioSource = null;
+                this.audioContext = null; this.gainNode = null; this.audioSource = null;
                 this.audioContextInitialized = false;
 
                 this._cacheDOMElements();
@@ -316,7 +311,6 @@
                 this._init();
             }
 
-            // --- 初始化方法 ---
             _init() {
                 this._applyTheme(localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
                 this._parseDataFromURL();
@@ -324,7 +318,7 @@
                 this._bindEventListeners();
                 this._updateVolumeUI();
             }
-
+            
             _cacheDOMElements() {
                 const $ = (id) => document.getElementById(id);
                 this.elements = {
@@ -343,7 +337,8 @@
             }
 
             _parseDataFromURL() {
-                try {
+                // ... (此部分无变化)
+                 try {
                     const params = new URLSearchParams(window.location.search);
                     const payloadParam = params.get('p');
                     if (payloadParam) {
@@ -365,8 +360,9 @@
             }
 
             _bindEventListeners() {
+                // 修复：只保留必要的事件监听
                 this.audio.addEventListener('play', () => this._updatePlayPauseUI(true));
-                this.audio.addEventListener('pause', () => this._updatePlayPauseUI(false));
+                // 'pause' 事件监听器被移除，因为它的行为不可靠
                 this.audio.addEventListener('ended', this._handleTrackEnd);
                 this.audio.addEventListener('timeupdate', this._updateProgress);
                 this.audio.addEventListener('loadedmetadata', this._updateProgress);
@@ -383,7 +379,6 @@
                 this.elements.playModeBtn.addEventListener('click', this._cyclePlayMode);
                 this.elements.sleepTimerSelect.addEventListener('change', this._handleSleepTimerChange);
                 
-                // 问题3 修改：音量控制事件现在由新方法处理
                 this.elements.volumeBtn.addEventListener('click', this._toggleMute);
                 this.elements.volumeSlider.addEventListener('input', (e) => this._setVolume(e.target.value));
 
@@ -396,26 +391,92 @@
                 this.elements.customTimerCancelBtn.addEventListener('click', this._hideCustomTimerModal);
             }
 
-            // --- 核心播放逻辑 ---
+            // 修复：重写 togglePlayPause 以确保状态同步
+            togglePlayPause = () => {
+                if (!this.audioContextInitialized) this._initWebAudio();
+                if (this.audioContext.state === 'suspended') this.audioContext.resume();
+                
+                if (this.state.isPlaying) {
+                    this.audio.pause();
+                    // 显式调用UI更新，不再依赖'pause'事件
+                    this._updatePlayPauseUI(false);
+                } else {
+                    this.audio.play();
+                    // 'play'事件比较可靠，可以依赖它来更新UI
+                }
+            }
+            
+            // 修复：重写音量控制逻辑
+            _initWebAudio() {
+                if (this.audioContextInitialized) return;
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                this.audioSource = this.audioContext.createMediaElementSource(this.audio);
+                this.gainNode = this.audioContext.createGain();
+                this.audioSource.connect(this.gainNode);
+                this.gainNode.connect(this.audioContext.destination);
+                
+                // 确保原生音量为1，完全由GainNode控制
+                this.audio.volume = 1; 
+                // 初始化时，应用之前已设置的音量状态
+                this._setVolume(this.state.currentVolume, true);
+                
+                this.audioContextInitialized = true;
+            }
+
+            _setVolume(value, force = false) {
+                // 即使在播放前，也先更新状态和UI
+                const newVolume = parseInt(value, 10);
+                this.state.currentVolume = newVolume;
+                this.state.isMuted = newVolume === 0;
+                
+                // 如果音频上下文已初始化，则实时更新增益
+                if (this.audioContextInitialized) {
+                    this.gainNode.gain.value = newVolume / 100;
+                }
+                
+                this._updateVolumeUI();
+            }
+
+            _toggleMute = () => {
+                if (this.state.isMuted) {
+                    // 如果之前音量为0，恢复到100
+                    const volumeToRestore = this.state.preMuteVolume > 0 ? this.state.preMuteVolume : 100;
+                    this._setVolume(volumeToRestore);
+                } else {
+                    this.state.preMuteVolume = this.state.currentVolume; // 记录静音前的音量
+                    this._setVolume(0);
+                }
+            }
+
+            _updateVolumeUI = () => {
+                this.elements.volumeSlider.value = this.state.currentVolume;
+
+                if (this.state.currentVolume === 0) {
+                    this.elements.volumeBtn.innerHTML = ICONS.volume.off;
+                } else if (this.state.currentVolume < 50) {
+                    this.elements.volumeBtn.innerHTML = ICONS.volume.low;
+                } else {
+                    this.elements.volumeBtn.innerHTML = ICONS.volume.high;
+                }
+            }
+            
+            // --- 其他方法 (大部分无变化) ---
             loadTrack(index, autoPlay = false) {
                 if (index < 0 || index >= this.state.tracks.length) return;
                 this.state.currentIndex = index;
                 this.audio.src = this.state.tracks[index].src;
                 this.elements.currentTrackTitle.textContent = this.state.tracks[index].title;
                 this._updatePlaylistActive();
-                if (autoPlay) this.audio.play();
-            }
-            togglePlayPause = () => {
-                // 问题3 新增：首次播放时初始化Web Audio
-                if (!this.audioContextInitialized) this._initWebAudio();
-                if (this.audioContext.state === 'suspended') this.audioContext.resume();
-                
-                this.state.isPlaying ? this.audio.pause() : this.audio.play();
+                if (autoPlay) {
+                    // 确保在播放前，音频上下文是活动的
+                    if (!this.audioContextInitialized) this._initWebAudio();
+                    if (this.audioContext.state === 'suspended') this.audioContext.resume();
+                    this.audio.play();
+                }
             }
             nextTrack = () => { this.loadTrack((this.state.currentIndex + 1) % this.state.tracks.length, this.state.isPlaying); }
             prevTrack = () => { this.loadTrack((this.state.currentIndex - 1 + this.state.tracks.length) % this.state.tracks.length, this.state.isPlaying); }
             seek = (delta) => { this.audio.currentTime = Math.max(0, this.audio.currentTime + delta); }
-
             _handleTrackEnd = () => {
                 switch (this.state.playMode) {
                     case 'repeat_one': this.audio.play(); break;
@@ -432,8 +493,6 @@
                     case 'repeat_list': this.nextTrack(); break;
                 }
             }
-
-            // --- UI 更新方法 ---
             _updateWorkInfo(data) {
                 if (data.c) {
                     this.elements.coverArt.src = data.c;
@@ -446,7 +505,6 @@
                 }
                 if (data.r) this.elements.rjCode.textContent = data.r;
             }
-
             _buildPlaylist() {
                 this.elements.playlist.innerHTML = this.state.tracks.map((track, i) => `<li data-index="${i}"><span class="track-index">${i + 1}.</span><span class="track-title">${track.title}</span></li>`).join('');
             }
@@ -461,7 +519,6 @@
                 this.elements.status.textContent = this.state.isPlaying ? `播放中... ${statusText}` : `已暂停 ${statusText}`;
             }
             _updateProgress = () => {
-                // 问题2 修复：移除 isSeeking 的判断，让进度条实时更新
                 const { duration, currentTime } = this.audio;
                 if (!isNaN(duration)) {
                     this.elements.progressFilled.style.width = `${(currentTime / duration) * 100}%`;
@@ -474,7 +531,6 @@
                 this.elements.playModeBtn.innerHTML = mode.icon;
                 this.elements.playModeBtn.title = mode.title;
             }
-            
             _setupIcons() {
                 this.elements.rewindBtn.innerHTML = ICONS.rewind;
                 this.elements.forwardBtn.innerHTML = ICONS.forward;
@@ -483,8 +539,6 @@
                 this.elements.downloadBtn.innerHTML = ICONS.download;
                 this._updatePlayModeUI();
             }
-            
-            // --- 事件处理器 ---
             _handlePlaylistClick = (e) => {
                 const targetLi = e.target.closest('li');
                 if (targetLi && !targetLi.classList.contains('track-error')) {
@@ -512,14 +566,12 @@
                 this.state.playMode = this.PLAY_MODES[(currentModeIndex + 1) % this.PLAY_MODES.length];
                 this._updatePlayModeUI();
             }
-
             _handleSleepTimerChange = (e) => {
                 const minutes = parseInt(e.target.value, 10);
                 if (minutes === -1) { this._showCustomTimerModal(); }
                 else if (minutes > 0) { this._setSleepTimer(minutes); }
                 else { this._clearSleepTimer(); }
             }
-            
             _handleAudioError = () => {
                 this._setError(`音轨 ${this.state.currentIndex + 1} 加载失败, 3秒后尝试下一首...`);
                 this.state.errorTracks.add(this.state.currentIndex);
@@ -537,8 +589,6 @@
                     this.loadTrack(nextIndex, true);
                 }, 3000);
             }
-            
-            // --- 辅助方法 ---
             _applyTheme(theme) { document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('theme', theme); }
             _setError(msg) { this.elements.status.textContent = msg; }
             _formatTime = (seconds) => {
@@ -565,6 +615,7 @@
             _updateSleepTimerDisplay = () => {
                 if (this.state.sleepTimerRemaining <= 0) {
                     this.audio.pause();
+                    this._updatePlayPauseUI(false); // 确保UI同步
                     this.elements.sleepTimerSelect.value = "0";
                     this._clearSleepTimer();
                 } else {
@@ -595,56 +646,8 @@
                     setTimeout(() => { this.elements.customTimerInput.style.border = ''; }, 1500);
                 }
             }
-
-            // 问题3 新增：Web Audio API 相关方法
-            _initWebAudio() {
-                if (this.audioContextInitialized) return;
-                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                this.audioSource = this.audioContext.createMediaElementSource(this.audio);
-                this.gainNode = this.audioContext.createGain();
-                this.audioSource.connect(this.gainNode);
-                this.gainNode.connect(this.audioContext.destination);
-                this.audio.volume = 1; // 让 GainNode 完全控制音量
-                this._setVolume(100); // 同步初始音量
-                this.audioContextInitialized = true;
-            }
-
-            _setVolume(value) { // value is from 0-150
-                if (!this.audioContextInitialized) this._initWebAudio();
-                const newGain = value / 100;
-                this.gainNode.gain.value = newGain;
-                this._updateVolumeUI();
-            }
-
-            _toggleMute = () => {
-                if (!this.audioContextInitialized) this._initWebAudio();
-                if (this.gainNode.gain.value > 0) {
-                    this.state.preMuteVolume = this.elements.volumeSlider.value;
-                    this._setVolume(0);
-                } else {
-                    this._setVolume(this.state.preMuteVolume);
-                }
-            }
-
-            _updateVolumeUI = () => {
-                const slider = this.elements.volumeSlider;
-                if (!this.audioContextInitialized) { // 初始化前的简单UI
-                    slider.value = 100;
-                    this.elements.volumeBtn.innerHTML = ICONS.volume.high;
-                    return;
-                }
-                const currentGain = this.gainNode.gain.value;
-                slider.value = Math.round(currentGain * 100);
-
-                if (currentGain === 0) this.elements.volumeBtn.innerHTML = ICONS.volume.off;
-                else if (currentGain < 0.5) this.elements.volumeBtn.innerHTML = ICONS.volume.low;
-                else this.elements.volumeBtn.innerHTML = ICONS.volume.high;
-            }
         }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            new Player();
-        });
+        document.addEventListener('DOMContentLoaded', () => { new Player(); });
     </script>
 </body>
 </html>
