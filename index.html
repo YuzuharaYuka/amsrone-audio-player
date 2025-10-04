@@ -3,31 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>在线音声播放器</title>
+    <title>ASMR ONE 在线播放器</title>
     <style>
-        body { 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            margin: 0; 
-            font-family: sans-serif; 
-            background-color: #f0f0f0; 
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f9;
+            color: #333;
         }
-        audio { 
-            width: 90%; 
-            max-width: 600px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            border-radius: 8px;
+        .container {
+            text-align: center;
+            padding: 20px;
+        }
+        #status {
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            color: #555;
+        }
+        audio {
+            width: 90%;
+            max-width: 700px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border-radius: 90px;
+            outline: none;
         }
     </style>
 </head>
 <body>
-    <h2>音声在线播放</h2>
-    <audio controls autoplay controlsList="nodownload">
-        <source src="https://raw.kiko-play-niptan.one/media/download/daily/2025-09-19/RJ01439179/トラック6本/01_右耳_KU100.wav" type="audio/wav">
-        您的浏览器不支持在线播放音频。
-    </audio>
+    <div class="container">
+        <h2 id="status">正在加载音频...</h2>
+        <audio id="audio-player" controls autoplay controlsList="nodownload">
+            您的浏览器不支持在线播放音频。
+        </audio>
+    </div>
+
+    <script>
+        // 这段脚本会在页面加载时立即执行
+        document.addEventListener('DOMContentLoaded', () => {
+            const statusElement = document.getElementById('status');
+            const audioElement = document.getElementById('audio-player');
+
+            // 1. 获取当前浏览器地址栏中的 URL 查询参数
+            const params = new URLSearchParams(window.location.search);
+
+            // 2. 尝试获取名为 'audio' 的参数值
+            const audioSrc = params.get('audio');
+
+            // 3. 判断参数是否存在且不为空
+            if (audioSrc) {
+                try {
+                    // 对URL进行解码，以防传入的是编码后的链接
+                    const decodedUrl = decodeURIComponent(audioSrc);
+                    // 4. 将获取到的链接设置为播放器的音源
+                    audioElement.src = decodedUrl;
+                    statusElement.textContent = '音频已加载，请点击播放';
+                    
+                    // 监听音频错误事件，提供更友好的提示
+                    audioElement.addEventListener('error', () => {
+                        statusElement.textContent = '音频加载失败，链接可能已失效或无法访问。';
+                        console.error('音频错误:', audioElement.error);
+                    });
+
+                } catch (e) {
+                    statusElement.textContent = '提供的音频链接格式无效。';
+                    console.error('URL解码失败:', e);
+                }
+            } else {
+                // 5. 如果 URL 中没有 'audio' 参数，则显示提示信息
+                statusElement.textContent = '未提供音频链接。';
+                audioElement.style.display = 'none'; // 隐藏播放器
+            }
+        });
+    </script>
 </body>
 </html>
