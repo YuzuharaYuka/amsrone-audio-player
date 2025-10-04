@@ -261,40 +261,55 @@
             const init = () => {
                 applyTheme(localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
                 
-                // [已重构] URL参数解析逻辑 (从Hash读取)
+                // [已重构] URL参数解析逻辑 (支持V1和V2)
                 try {
-                    // **核心修改：从 location.hash 读取数据**
-                    const payload = window.location.hash.substring(1); // 获取'#'后面的所有内容
+                    const params = new URLSearchParams(window.location.search);
+                    const payloadParam = params.get('p');
 
-                    if (payload) {
-                        // 1. Base64解码
-                        const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+                    if (payloadParam) {
+                        const base64 = payloadParam.replace(/-/g, '+').replace(/_/g, '/');
                         const compressed = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-                        
-                        // 2. Pako解压缩
                         const jsonString = pako.inflate(compressed, { to: 'string' });
-
-                        // 3. 解析JSON数据
                         const data = JSON.parse(jsonString);
+                        
+                        // 根据版本号选择解析方式
+                        if (data.v === 2) {
+                            // --- V2 Payload Logic ---
+                            const rjId = data.r ? data.r.replace(/^RJ/i, '') : null;
+                            const coverUrl = rjId ? `${data.c || 'https://api.asmr-200.com/api/cover/'}${rjId}.jpg?type=main` : null;
 
-                        if (data.c) {
-                            elements.coverArt.src = data.c;
-                            elements.backgroundArt.style.backgroundImage = `url(${data.c})`;
-                            elements.backgroundArt.style.opacity = '1';
-                        }
-                        if (data.w) elements.workTitle.textContent = data.w;
-                        if (data.r) elements.rjCode.textContent = data.r;
+                            if (coverUrl) {
+                                elements.coverArt.src = coverUrl;
+                                elements.backgroundArt.style.backgroundImage = `url(${coverUrl})`;
+                                elements.backgroundArt.style.opacity = '1';
+                            }
+                            if (data.w) elements.workTitle.textContent = data.w;
+                            if (data.r) elements.rjCode.textContent = data.r;
 
-                        if (data.b && data.t && data.t.length > 0) {
-                            // 4. 重建完整的音轨列表
-                            state.tracks = data.t.map(track => ({
-                                src: data.b + track.f, // 组合 baseUrl 和 filename
-                                title: track.t
-                            }));
-                            buildPlaylist();
-                            loadTrack(0);
+                            if (data.b && data.t && Array.isArray(data.t)) {
+                                state.tracks = data.t.map(filename => ({
+                                    src: data.b + filename,
+                                    title: decodeURIComponent(filename).replace(/\.\w+$/, '') // 从文件名推导标题
+                                }));
+                                buildPlaylist();
+                                loadTrack(0);
+                            } else { setError('V2数据负载不完整'); }
+
                         } else {
-                            setError('数据负载不完整');
+                            // --- V1 Payload Logic (向后兼容) ---
+                            if (data.cover) {
+                                elements.coverArt.src = data.cover;
+                                elements.backgroundArt.style.backgroundImage = `url(${data.cover})`;
+                                elements.backgroundArt.style.opacity = '1';
+                            }
+                            if (data.workTitle) elements.workTitle.textContent = data.workTitle;
+                            if (data.rjCode) elements.rjCode.textContent = data.rjCode;
+
+                            if (data.tracks && Array.isArray(data.tracks)) {
+                                state.tracks = data.tracks; // V1直接使用tracks数组
+                                buildPlaylist();
+                                loadTrack(0);
+                            } else { setError('V1数据负载不完整'); }
                         }
                     } else {
                         setError('未提供播放数据');
