@@ -57,9 +57,18 @@ export class Player {
                 const compressed = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
                 const jsonString = pako.inflate(compressed, { to: 'string' });
                 const data = JSON.parse(jsonString);
-                this._updateWorkInfo(data);
+
+                // --- V4 负载处理 ---
+                const baseUrl = data.b || ''; // 获取 base url, 默认为空字符串
+
+                this._updateWorkInfo(data, baseUrl); // 将 baseUrl 传递给UI更新函数
+                
                 if (data.t && Array.isArray(data.t)) {
-                    this.state.tracks = data.t.map(track => ({ src: track.u, title: track.t }));
+                    // 重组完整的 track URL
+                    this.state.tracks = data.t.map(track => ({
+                        src: baseUrl + track.u, 
+                        title: track.t 
+                    }));
                     this._buildPlaylist();
                     this.loadTrack(0);
                 } else { throw new Error('Payload中音轨数据格式不正确'); }
@@ -70,6 +79,24 @@ export class Player {
         }
     }
 
+    _updateWorkInfo(data, baseUrl = '') {
+        if (data.c) {
+            // 重组完整的封面 URL
+            const fullCoverUrl = baseUrl + data.c;
+            this.elements.coverArt.src = fullCoverUrl;
+            this.elements.backgroundArt.style.backgroundImage = `url(${fullCoverUrl})`;
+            this.elements.backgroundArt.style.opacity = '1';
+        }
+        if (data.w) {
+            this.elements.workTitle.textContent = data.w;
+            document.title = `${data.w} | ASMR ONE Player`;
+        }
+        if (data.r) {
+            this.elements.rjCode.textContent = data.r;
+        }
+    }
+
+    // ( ... 其他所有方法保持不变 ... )
     _bindEventListeners() {
         this.audio.addEventListener('play', () => {
             this._updatePlayPauseUI(true);
@@ -101,11 +128,9 @@ export class Player {
         this.elements.customTimerSetBtn.addEventListener('click', this._handleCustomTimerSet);
         this.elements.customTimerCancelBtn.addEventListener('click', this._hideCustomTimerModal);
     }
-
     togglePlayPause = () => {
         if (!this.audioContextInitialized) this._initWebAudio();
         if (this.audioContext.state === 'suspended') this.audioContext.resume();
-        
         if (this.state.isPlaying) {
             this.audio.pause();
             this._updatePlayPauseUI(false);
@@ -113,7 +138,6 @@ export class Player {
             this.audio.play();
         }
     }
-    
     _initWebAudio() {
         if (this.audioContextInitialized) return;
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -125,7 +149,6 @@ export class Player {
         this._setVolume(this.state.currentVolume);
         this.audioContextInitialized = true;
     }
-
     _setVolume(value) {
         const newVolume = parseInt(value, 10);
         this.state.currentVolume = newVolume;
@@ -133,7 +156,6 @@ export class Player {
         if (newVolume > 0) { this.state.isMuted = false; }
         this._updateVolumeUI();
     }
-
     _toggleMute = () => {
         if (this.state.isMuted) {
             const volumeToRestore = this.state.preMuteVolume > 0 ? this.state.preMuteVolume : 100;
@@ -145,14 +167,12 @@ export class Player {
             this.state.isMuted = true;
         }
     }
-
     _updateVolumeUI = () => {
         this.elements.volumeSlider.value = this.state.currentVolume;
         if (this.state.currentVolume === 0) { this.elements.volumeBtn.innerHTML = ICONS.volume.off; } 
         else if (this.state.currentVolume < 50) { this.elements.volumeBtn.innerHTML = ICONS.volume.low; } 
         else { this.elements.volumeBtn.innerHTML = ICONS.volume.high; }
     }
-    
     loadTrack(index, autoPlay = false) {
         if (index < 0 || index >= this.state.tracks.length) return;
         this._abortPreload();
@@ -167,24 +187,18 @@ export class Player {
             URL.revokeObjectURL(this.state.currentObjectUrl);
             this.state.currentObjectUrl = null;
         }
-
-        // --- 修改开始：修复缓冲条显示问题 ---
         if (this.state.trackCache.has(index)) {
             const blob = this.state.trackCache.get(index);
             const objectUrl = URL.createObjectURL(blob);
             this.state.currentObjectUrl = objectUrl;
             this.audio.src = objectUrl;
-            // 手动将缓冲条设置为100%，因为 Blob URL 不会触发 progress 事件
             this.elements.progressBuffered.style.width = '100%'; 
             console.log(`Track ${index+1} loaded from cache.`);
         } else {
             this.audio.src = this.state.tracks[index].src;
-            // 从网络加载时，重置缓冲条
             this.elements.progressBuffered.style.width = '0%';
             console.log(`Track ${index+1} loaded from network.`);
         }
-        // --- 修改结束 ---
-
         this._updatePlaylistActive();
         if (autoPlay) {
             if (!this.audioContextInitialized) this._initWebAudio();
@@ -192,7 +206,6 @@ export class Player {
             this.audio.play().catch(e => console.error("Playback failed:", e));
         }
     }
-
     _triggerPreload() {
         setTimeout(() => {
             if (this.state.isPlaying) {
@@ -200,13 +213,11 @@ export class Player {
             }
         }, 2000);
     }
-
     _abortPreload() {
         if (this.state.isPreloading && this.state.preloadAbortController) {
             this.state.preloadAbortController.abort();
         }
     }
-
     async _preloadNextTrack() {
         if (this.state.isPreloading) return;
         let nextIndex = -1;
@@ -236,7 +247,6 @@ export class Player {
             this.state.preloadAbortController = null;
         }
     }
-
     _updateBufferProgress = () => {
         const audio = this.audio;
         if (audio.duration > 0 && audio.buffered.length > 0) {
@@ -245,7 +255,6 @@ export class Player {
             this.elements.progressBuffered.style.width = `${bufferedPercent}%`;
         }
     }
-
     _updateProgress = () => {
         this._updateBufferProgress();
         const { duration, currentTime } = this.audio;
@@ -255,7 +264,6 @@ export class Player {
             this.elements.totalDuration.textContent = this._formatTime(duration);
         }
     }
-
     nextTrack = () => { this.loadTrack((this.state.currentIndex + 1) % this.state.tracks.length, this.state.isPlaying); }
     prevTrack = () => { this.loadTrack((this.state.currentIndex - 1 + this.state.tracks.length) % this.state.tracks.length, this.state.isPlaying); }
     seek = (delta) => { this.audio.currentTime = Math.max(0, this.audio.currentTime + delta); }
@@ -274,18 +282,6 @@ export class Player {
                 break;
             case 'repeat_list': this.nextTrack(); break;
         }
-    }
-    _updateWorkInfo(data) {
-        if (data.c) {
-            this.elements.coverArt.src = data.c;
-            this.elements.backgroundArt.style.backgroundImage = `url(${data.c})`;
-            this.elements.backgroundArt.style.opacity = '1';
-        }
-        if (data.w) {
-            this.elements.workTitle.textContent = data.w;
-            document.title = `${data.w} | ASMR ONE Player`;
-        }
-        if (data.r) this.elements.rjCode.textContent = data.r;
     }
     _buildPlaylist() {
         this.elements.playlist.innerHTML = this.state.tracks.map((track, i) => `<li data-index="${i}"><span class="track-index">${i + 1}.</span><span class="track-title">${track.title}</span></li>`).join('');
