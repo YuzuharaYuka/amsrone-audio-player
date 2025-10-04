@@ -8,6 +8,7 @@
     --border-light: rgba(0, 0, 0, 0.1); --shadow-light: rgba(0, 0, 0, 0.05);
     --track-bg-light: #e5e7eb; --thumb-bg-light: #1f2937;
     --error-text-light: #b91c1c;
+    --buffer-bg-light: rgba(0, 0, 0, 0.2);
 
     /* Dark Theme */
     --bg-primary-dark: #111827; --bg-secondary-dark: #1f293b;
@@ -17,6 +18,7 @@
     --border-dark: rgba(255, 255, 255, 0.1); --shadow-dark: rgba(0, 0, 0, 0.2);
     --track-bg-dark: #4b5563; --thumb-bg-dark: #f9fafb;
     --error-text-dark: #f87171;
+    --buffer-bg-dark: rgba(255, 255, 255, 0.2);
 }
 
 [data-theme="light"] {
@@ -26,7 +28,8 @@
     --accent-primary: var(--accent-primary-light); --accent-secondary: var(--accent-secondary-light);
     --border-color: var(--border-light); --shadow-color: var(--shadow-light);
     --track-bg: var(--track-bg-light); --thumb-bg: var(--thumb-bg-light);
-    --error-text: var(--error-text-light); color-scheme: light;
+    --error-text: var(--error-text-light); 
+    --buffer-bg: var(--buffer-bg-light); color-scheme: light;
 }
 
 [data-theme="dark"] {
@@ -36,7 +39,8 @@
     --accent-primary: var(--accent-primary-dark); --accent-secondary: var(--accent-secondary-dark);
     --border-color: var(--border-dark); --shadow-color: var(--shadow-dark);
     --track-bg: var(--track-bg-dark); --thumb-bg: var(--thumb-bg-dark);
-    --error-text: var(--error-text-dark); color-scheme: dark;
+    --error-text: var(--error-text-dark); 
+    --buffer-bg: var(--buffer-bg-dark); color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -70,62 +74,55 @@ body {
     }
 }
 
-/* 优化1：定义加载动画 */
 @keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); }
 }
 
 .album-art-section {
     flex-basis: 45%; padding: 2rem; display: flex; flex-direction: column;
     justify-content: center; align-items: center; text-align: center;
-    /* 优化1：应用加载动画 */
     animation: fadeInUp 0.6s ease-out both;
 }
 .cover-art-wrapper {
     width: 100%; max-width: 560px; aspect-ratio: 560 / 420; border-radius: 12px;
     overflow: hidden; box-shadow: 0 8px 20px var(--shadow-color); margin-bottom: 1.5rem;
-    /* 优化3：为封面交互添加过渡 */
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
-/* 优化3：封面悬停效果 */
-.cover-art-wrapper:hover {
-    transform: scale(1.03);
-    box-shadow: 0 12px 28px var(--shadow-color);
-}
+.cover-art-wrapper:hover { transform: scale(1.03); box-shadow: 0 12px 28px var(--shadow-color); }
 #cover-art { width: 100%; height: 100%; object-fit: cover; }
 #work-title { font-size: 1.25rem; font-weight: 600; margin: 0; }
 
 .controls-and-playlist-section {
     flex-basis: 55%; display: flex; flex-direction: column; padding: 2rem;
     border-left: 1px solid var(--border-color);
-    /* 优化1：应用加载动画 (延迟执行) */
     animation: fadeInUp 0.6s 0.15s ease-out both;
 }
 
 .track-info { text-align: center; margin-bottom: 1rem; }
 #current-track-title {
     font-size: 1.5rem; font-weight: bold; margin: 0 0 0.5rem 0; min-height: 2.25rem;
-    /* 优化2：为标题切换添加过渡 */
     transition: opacity 0.15s ease-in-out;
 }
-/* 优化2：标题切换时的淡出状态 */
-#current-track-title.is-changing {
-    opacity: 0;
-}
-
+#current-track-title.is-changing { opacity: 0; }
 #status { color: var(--text-secondary); font-size: 1rem; }
 audio { display: none; }
 .custom-audio-player { margin-bottom: 1rem; }
 .progress-bar-container { width: 100%; cursor: pointer; padding: 10px 0; }
-.progress-bar { height: 6px; background-color: var(--track-bg); border-radius: 3px; position: relative; }
-.progress-filled { height: 100%; width: 0; background-color: var(--accent-primary); border-radius: 3px; position: relative; pointer-events: none; }
+.progress-bar { height: 6px; background-color: var(--track-bg); border-radius: 3px; position: relative; overflow: hidden; }
+
+.progress-buffered {
+    position: absolute; top: 0; left: 0;
+    height: 100%; width: 0;
+    background-color: var(--buffer-bg);
+    border-radius: 3px;
+    transition: width 0.2s ease-out;
+}
+
+.progress-filled { 
+    position: relative;
+    height: 100%; width: 0; 
+    background-color: var(--accent-primary); border-radius: 3px; pointer-events: none; 
+}
 .progress-filled::after {
     content: ''; position: absolute; right: -6px; top: 50%; transform: translateY(-50%);
     width: 12px; height: 12px; background-color: var(--thumb-bg); border-radius: 50%;
@@ -135,17 +132,11 @@ audio { display: none; }
 
 .main-controls { display: flex; justify-content: space-evenly; align-items: center; margin-top: 1rem; }
 .main-controls button {
-    background: none; border: none; cursor: pointer; color: var(--text-primary);
-    padding: 0.5rem; 
-    /* 优化4：增强按钮过渡效果 */
+    background: none; border: none; cursor: pointer; color: var(--text-primary); padding: 0.5rem; 
     transition: color 0.2s ease, transform 0.15s ease, filter 0.2s ease;
     filter: drop-shadow(0 0 0 transparent);
 }
-.main-controls button:hover {
-    color: var(--accent-primary);
-    /* 优化4：添加悬停发光效果 */
-    filter: drop-shadow(0 0 4px var(--accent-primary));
-}
+.main-controls button:hover { color: var(--accent-primary); filter: drop-shadow(0 0 4px var(--accent-primary)); }
 .main-controls button:active { transform: scale(0.9); }
 .main-controls button svg { width: 24px; height: 24px; vertical-align: middle; }
 .play-pause-btn svg { width: 40px; height: 40px; }

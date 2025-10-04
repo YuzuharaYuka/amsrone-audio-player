@@ -1,4 +1,3 @@
-// 使用 export 关键字，让 ICONS 可以被其他模块导入
 export const ICONS = {
     rewind: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 4.5v15l-8-7.5 8-7.5zm-1 2.69L7.44 12l4.06 4.81V7.19zM20.5 4.5v15l-8-7.5 8-7.5zm-1 2.69L15.44 12l4.06 4.81V7.19z"/></svg>`,
     forward: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 19.5v-15l8 7.5-8 7.5zm1-2.69L8.56 12 5 7.19v9.62zM12 19.5v-15l8 7.5-8 7.5zm1-2.69L16.56 12 13 7.19v9.62z"/></svg>`,

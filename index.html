@@ -6,12 +6,12 @@
     <title>ASMR ONE 在线播放器</title>
     <!-- 引入 pako 库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
-    <!-- 更新 CSS 路径 -->
+    <!-- 链接外部 CSS 文件 -->
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <!-- HTML 结构保持不变 -->
     <div id="background-art"></div>
+
     <div class="player-wrapper">
         <div class="player-container">
             <section class="album-art-section">
@@ -26,10 +26,15 @@
                     <h2 id="current-track-title">播放器</h2>
                     <p id="status">正在初始化...</p>
                 </div>
+                
                 <audio id="audio-player" crossorigin="anonymous"></audio>
+
                 <div class="custom-audio-player">
                     <div class="progress-bar-container" id="progress-bar-container">
-                        <div class="progress-bar"><div class="progress-filled" id="progress-filled"></div></div>
+                        <div class="progress-bar">
+                            <div class="progress-buffered" id="progress-buffered"></div>
+                            <div class="progress-filled" id="progress-filled"></div>
+                        </div>
                     </div>
                     <div class="time-display"><span id="current-time">00:00</span><span id="total-duration">00:00</span></div>
                     <div class="main-controls">
@@ -45,6 +50,7 @@
                         <button id="download-track" title="下载当前音轨"></button>
                     </div>
                 </div>
+
                 <div class="extra-controls">
                     <div class="volume-control">
                         <button id="volume-btn" title="静音"></button>
@@ -66,10 +72,12 @@
             </section>
         </div>
     </div>
+
     <button class="theme-toggle" id="theme-toggle" title="切换主题">
         <svg id="icon-sun" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
         <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="display:none;"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
     </button>
+    
     <div id="custom-timer-modal" class="modal-overlay">
       <div class="modal-content">
         <h3>设置定时停止</h3>
@@ -82,7 +90,7 @@
       </div>
     </div>
     
-    <!-- 更新 JS 路径并添加 type="module" -->
+    <!-- 链接外部 JS 模块 -->
     <script type="module" src="js/main.js"></script>
 </body>
 </html>

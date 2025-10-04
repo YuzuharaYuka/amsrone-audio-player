@@ -7,7 +7,11 @@ export class Player {
             tracks: [], currentIndex: -1, isPlaying: false, isSeeking: false,
             sleepTimerId: null, sleepTimerRemaining: 0, 
             currentVolume: 100, isMuted: false, preMuteVolume: 100,
-            playMode: 'sequential', errorTracks: new Set()
+            playMode: 'sequential', errorTracks: new Set(),
+            isPreloading: false,
+            preloadAbortController: null,
+            trackCache: new Map(),
+            currentObjectUrl: null,
         };
         this.PLAY_MODES = ['sequential', 'repeat_list', 'repeat_one', 'shuffle'];
         this.audioContext = null; this.gainNode = null; this.audioSource = null;
@@ -29,6 +33,7 @@ export class Player {
     _cacheDOMElements() {
         const $ = (id) => document.getElementById(id);
         this.elements = {
+            progressBuffered: $('progress-buffered'),
             backgroundArt: $('background-art'), status: $('status'), workTitle: $('work-title'),
             coverArt: $('cover-art'), rjCode: $('rj-code-display'), currentTrackTitle: $('current-track-title'),
             audio: $('audio-player'), playlist: $('playlist'), prevBtn: $('prev-track'), nextBtn: $('next-track'),
@@ -66,7 +71,11 @@ export class Player {
     }
 
     _bindEventListeners() {
-        this.audio.addEventListener('play', () => this._updatePlayPauseUI(true));
+        this.audio.addEventListener('play', () => {
+            this._updatePlayPauseUI(true);
+            this._triggerPreload();
+        });
+        this.audio.addEventListener('progress', this._updateBufferProgress);
         this.audio.addEventListener('ended', this._handleTrackEnd);
         this.audio.addEventListener('timeupdate', this._updateProgress);
         this.audio.addEventListener('loadedmetadata', this._updateProgress);
@@ -113,22 +122,15 @@ export class Player {
         this.audioSource.connect(this.gainNode);
         this.gainNode.connect(this.audioContext.destination);
         this.audio.volume = 1;
-        this._setVolume(this.state.currentVolume, true);
+        this._setVolume(this.state.currentVolume);
         this.audioContextInitialized = true;
     }
 
     _setVolume(value) {
         const newVolume = parseInt(value, 10);
         this.state.currentVolume = newVolume;
-        
-        if (this.audioContextInitialized) {
-            this.gainNode.gain.value = newVolume / 100;
-        }
-
-        if (newVolume > 0) {
-            this.state.isMuted = false;
-        }
-
+        if (this.audioContextInitialized) { this.gainNode.gain.value = newVolume / 100; }
+        if (newVolume > 0) { this.state.isMuted = false; }
         this._updateVolumeUI();
     }
 
@@ -146,35 +148,108 @@ export class Player {
 
     _updateVolumeUI = () => {
         this.elements.volumeSlider.value = this.state.currentVolume;
-        if (this.state.currentVolume === 0) {
-            this.elements.volumeBtn.innerHTML = ICONS.volume.off;
-        } else if (this.state.currentVolume < 50) {
-            this.elements.volumeBtn.innerHTML = ICONS.volume.low;
-        } else {
-            this.elements.volumeBtn.innerHTML = ICONS.volume.high;
-        }
+        if (this.state.currentVolume === 0) { this.elements.volumeBtn.innerHTML = ICONS.volume.off; } 
+        else if (this.state.currentVolume < 50) { this.elements.volumeBtn.innerHTML = ICONS.volume.low; } 
+        else { this.elements.volumeBtn.innerHTML = ICONS.volume.high; }
     }
     
     loadTrack(index, autoPlay = false) {
         if (index < 0 || index >= this.state.tracks.length) return;
+        this._abortPreload();
         this.state.currentIndex = index;
-        
-        // 优化2：实现标题交叉渐变
         const titleEl = this.elements.currentTrackTitle;
         titleEl.classList.add('is-changing');
         setTimeout(() => {
             titleEl.textContent = this.state.tracks[index].title;
             titleEl.classList.remove('is-changing');
         }, 150);
-
-        this.audio.src = this.state.tracks[index].src;
+        if (this.state.currentObjectUrl) {
+            URL.revokeObjectURL(this.state.currentObjectUrl);
+            this.state.currentObjectUrl = null;
+        }
+        if (this.state.trackCache.has(index)) {
+            const blob = this.state.trackCache.get(index);
+            const objectUrl = URL.createObjectURL(blob);
+            this.state.currentObjectUrl = objectUrl;
+            this.audio.src = objectUrl;
+            console.log(`Track ${index+1} loaded from cache.`);
+        } else {
+            this.audio.src = this.state.tracks[index].src;
+            console.log(`Track ${index+1} loaded from network.`);
+        }
         this._updatePlaylistActive();
         if (autoPlay) {
             if (!this.audioContextInitialized) this._initWebAudio();
             if (this.audioContext.state === 'suspended') this.audioContext.resume();
-            this.audio.play();
+            this.audio.play().catch(e => console.error("Playback failed:", e));
         }
     }
+
+    _triggerPreload() {
+        setTimeout(() => {
+            if (this.state.isPlaying) {
+                this._preloadNextTrack();
+            }
+        }, 2000);
+    }
+
+    _abortPreload() {
+        if (this.state.isPreloading && this.state.preloadAbortController) {
+            this.state.preloadAbortController.abort();
+        }
+    }
+
+    async _preloadNextTrack() {
+        if (this.state.isPreloading) return;
+        let nextIndex = -1;
+        if (this.state.playMode === 'sequential' || this.state.playMode === 'repeat_list') {
+            nextIndex = (this.state.currentIndex + 1) % this.state.tracks.length;
+        }
+        if (nextIndex === -1 || this.state.trackCache.has(nextIndex) || this.state.errorTracks.has(nextIndex)) {
+            return;
+        }
+        this.state.isPreloading = true;
+        this.state.preloadAbortController = new AbortController();
+        const nextTrack = this.state.tracks[nextIndex];
+        console.log(`Preloading track ${nextIndex + 1}: ${nextTrack.title}`);
+        try {
+            const response = await fetch(nextTrack.src, { signal: this.state.preloadAbortController.signal });
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const blob = await response.blob();
+            this.state.trackCache.clear();
+            this.state.trackCache.set(nextIndex, blob);
+            console.log(`Track ${nextIndex + 1} successfully preloaded and cached.`);
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                console.error(`Failed to preload track ${nextIndex + 1}:`, error);
+            }
+        } finally {
+            this.state.isPreloading = false;
+            this.state.preloadAbortController = null;
+        }
+    }
+
+    _updateBufferProgress = () => {
+        const audio = this.audio;
+        if (audio.duration > 0 && audio.buffered.length > 0) {
+            const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
+            const bufferedPercent = (bufferedEnd / audio.duration) * 100;
+            this.elements.progressBuffered.style.width = `${bufferedPercent}%`;
+        } else {
+            this.elements.progressBuffered.style.width = '0%';
+        }
+    }
+
+    _updateProgress = () => {
+        this._updateBufferProgress();
+        const { duration, currentTime } = this.audio;
+        if (!isNaN(duration)) {
+            this.elements.progressFilled.style.width = `${(currentTime / duration) * 100}%`;
+            this.elements.currentTime.textContent = this._formatTime(currentTime);
+            this.elements.totalDuration.textContent = this._formatTime(duration);
+        }
+    }
+
     nextTrack = () => { this.loadTrack((this.state.currentIndex + 1) % this.state.tracks.length, this.state.isPlaying); }
     prevTrack = () => { this.loadTrack((this.state.currentIndex - 1 + this.state.tracks.length) % this.state.tracks.length, this.state.isPlaying); }
     seek = (delta) => { this.audio.currentTime = Math.max(0, this.audio.currentTime + delta); }
@@ -218,14 +293,6 @@ export class Player {
         this.elements.pauseIcon.style.display = this.state.isPlaying ? 'block' : 'none';
         const statusText = `(音轨 ${this.state.currentIndex + 1}/${this.state.tracks.length})`;
         this.elements.status.textContent = this.state.isPlaying ? `播放中... ${statusText}` : `已暂停 ${statusText}`;
-    }
-    _updateProgress = () => {
-        const { duration, currentTime } = this.audio;
-        if (!isNaN(duration)) {
-            this.elements.progressFilled.style.width = `${(currentTime / duration) * 100}%`;
-            this.elements.currentTime.textContent = this._formatTime(currentTime);
-            this.elements.totalDuration.textContent = this._formatTime(duration);
-        }
     }
     _updatePlayModeUI = () => {
         const mode = ICONS.playModes[this.state.playMode];
@@ -301,7 +368,7 @@ export class Player {
     _downloadCurrentTrack = () => {
         if (this.state.currentIndex < 0) return;
         const { src, title } = this.state.tracks[this.state.currentIndex];
-        const a = document.createElement('a'); a.href = src; a.download = title || 'audio.wav';
+        const a = document.createElement('a'); a.href = this.audio.src; a.download = title || 'audio.wav';
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
     }
     _setSleepTimer(minutes) {
