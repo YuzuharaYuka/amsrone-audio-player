@@ -48,9 +48,9 @@ export class Player {
         };
     }
 
+    // --- 修复：更健壮的 URL 重组函数 ---
     _reconstructUrl(data) {
         if (typeof data === 'string') {
-            // Handle cases where a key might be the string itself
             return URL_DICTIONARY[data] || data;
         }
         if (Array.isArray(data)) {
@@ -59,6 +59,7 @@ export class Player {
         return '';
     }
 
+    // --- 修复：集中处理 URL 解析 ---
     _parseDataFromURL() {
          try {
             const params = new URLSearchParams(window.location.search);
@@ -69,14 +70,21 @@ export class Player {
                 const jsonString = pako.inflate(compressed, { to: 'string' });
                 const data = JSON.parse(jsonString);
 
-                // --- 修复：确保 baseUrl 被正确传递和使用 ---
+                // 1. 集中解码所有 URL
                 const baseUrl = this._reconstructUrl(data.b || '');
-                
-                // 1. 将 baseUrl 传递给 _updateWorkInfo
-                this._updateWorkInfo(data, baseUrl);
+                const fullCoverUrl = this._reconstructUrl(data.c || '');
+                const rjNum = parseInt(data.r, 36);
+                const fullRjCode = 'RJ' + String(rjNum).padStart(8, '0');
+
+                // 2. 将最终结果传递给 UI 更新函数
+                this._updateWorkInfo({
+                    title: data.w,
+                    rjCode: fullRjCode,
+                    coverUrl: fullCoverUrl,
+                });
                 
                 if (data.t && Array.isArray(data.t)) {
-                    // 2. 在这里也使用正确的 baseUrl
+                    // 3. 使用解码后的 baseUrl 构建音轨列表
                     this.state.tracks = data.t.map(trackArr => ({
                         src: baseUrl + trackArr[0], 
                         title: trackArr[1] 
@@ -91,29 +99,19 @@ export class Player {
         }
     }
 
-    // --- 修复：接收 baseUrl 作为参数 ---
-    _updateWorkInfo(data, baseUrl = '') {
-        if (data.c) {
-            let fullCoverUrl = '';
-            // 封面URL自己的重组逻辑，它不依赖于音轨的baseUrl
-            if (Array.isArray(data.c)) { 
-                const [keys, path] = data.c;
-                const prefix = this._reconstructUrl(keys);
-                fullCoverUrl = prefix + path;
-            } else { 
-                fullCoverUrl = data.c;
-            }
-            this.elements.coverArt.src = fullCoverUrl;
-            this.elements.backgroundArt.style.backgroundImage = `url(${fullCoverUrl})`;
+    // --- 修复：简化为纯粹的 UI 更新函数 ---
+    _updateWorkInfo({ title, rjCode, coverUrl }) {
+        if (coverUrl) {
+            this.elements.coverArt.src = coverUrl;
+            this.elements.backgroundArt.style.backgroundImage = `url(${coverUrl})`;
             this.elements.backgroundArt.style.opacity = '1';
         }
-        if (data.w) {
-            this.elements.workTitle.textContent = data.w;
-            document.title = `${data.w} | ASMR ONE Player`;
+        if (title) {
+            this.elements.workTitle.textContent = title;
+            document.title = `${title} | ASMR ONE Player`;
         }
-        if (data.r) {
-            const rjNum = parseInt(data.r, 36);
-            this.elements.rjCode.textContent = 'RJ' + String(rjNum).padStart(8, '0');
+        if (rjCode) {
+            this.elements.rjCode.textContent = rjCode;
         }
     }
     
@@ -305,7 +303,7 @@ export class Player {
         }
     }
     _buildPlaylist() {
-        this.elements.playlist.innerHTML = this.state.tracks.map((track, i) => `<li data-index="${i}"><span class="track-index">${i + 1}.</span><span class.track-title">${track.title}</span></li>`).join('');
+        this.elements.playlist.innerHTML = this.state.tracks.map((track, i) => `<li data-index="${i}"><span class="track-index">${i + 1}.</span><span class="track-title">${track.title}</span></li>`).join('');
     }
     _updatePlaylistActive() {
          this.elements.playlist.querySelectorAll('li').forEach((li, i) => li.classList.toggle('active', i === this.state.currentIndex));
