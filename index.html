@@ -219,50 +219,72 @@
     </button>
     
     <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            // --- DOM Element Cache ---
-            const $ = (id) => document.getElementById(id);
-            const elements = {
-                backgroundArt: $('background-art'), status: $('status'), workTitle: $('work-title'),
-                coverArt: $('cover-art'), rjCode: $('rj-code-display'), currentTrackTitle: $('current-track-title'),
-                audio: $('audio-player'), playlist: $('playlist'), prevBtn: $('prev-track'), nextBtn: $('next-track'),
-                rewindBtn: $('rewind-btn'), forwardBtn: $('forward-btn'), rateSelector: $('playback-rate'),
-                themeToggleBtn: $('theme-toggle'), downloadBtn: $('download-track'), playPauseBtn: $('play-pause-btn'),
-                playIcon: $('play-icon'), pauseIcon: $('pause-icon'), progressContainer: $('progress-bar-container'),
-                progressFilled: $('progress-filled'), currentTime: $('current-time'), totalDuration: $('total-duration'),
-                playModeBtn: $('play-mode-btn'), sleepTimerSelect: $('sleep-timer-select'), sleepTimerDisplay: $('sleep-timer-display'),
-                volumeBtn: $('volume-btn'), volumeSlider: $('volume-slider'),
-            };
+        // --- 1. 分离常量 ---
+        const ICONS = {
+            rewind: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M11 18V6l-8.5 6 8.5 6zm-2-6l6-4.5v9l-6-4.5z"/></svg>`,
+            forward: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 18l8.5-6L4 6v12zm9-12v9l6-4.5-6-4.5z"/></svg>`,
+            prev: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>`,
+            next: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>`,
+            download: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>`,
+            volume: {
+                high: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>`,
+                low: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z"/></svg>`,
+                off: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>`
+            },
+            playModes: {
+                sequential: { icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" /></svg>`, title: '顺序播放'},
+                repeat_list: { icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>`, title: '列表循环'},
+                repeat_one: { icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4zm-4-2V9h-1v4h-1v2h2v-2z"/></svg>`, title: '单曲循环'},
+                shuffle: { icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>`, title: '随机播放'},
+            }
+        };
 
-            // --- State & Constants ---
-            let state = { tracks: [], currentIndex: -1, isPlaying: false, isSeeking: false, sleepTimerId: null, sleepTimerRemaining: 0, preMuteVolume: 1 };
-            const PLAY_MODES = ['sequential', 'repeat_list', 'repeat_one', 'shuffle'];
-            let currentPlayMode = PLAY_MODES[0];
-            
-            const ICONS = {
-                rewind: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M11 18V6l-8.5 6 8.5 6zm-2-6l6-4.5v9l-6-4.5z"/></svg>`,
-                forward: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 18l8.5-6L4 6v12zm9-12v9l6-4.5-6-4.5z"/></svg>`,
-                prev: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>`,
-                next: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>`,
-                download: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>`,
-                volume: {
-                    high: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>`,
-                    low: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z"/></svg>`,
-                    off: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>`
-                },
-                playModes: {
-                    sequential: { icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" /></svg>`, title: '顺序播放'},
-                    repeat_list: { icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>`, title: '列表循环'},
-                    repeat_one: { icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4zm-4-2V9h-1v4h-1v2h2v-2z"/></svg>`, title: '单曲循环'},
-                    shuffle: { icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>`, title: '随机播放'},
-                }
-            };
+        // --- 2. 创建 Player 类 ---
+        class Player {
+            constructor() {
+                this.elements = {};
+                this.state = {
+                    tracks: [],
+                    currentIndex: -1,
+                    isPlaying: false,
+                    isSeeking: false,
+                    sleepTimerId: null,
+                    sleepTimerRemaining: 0,
+                    preMuteVolume: 1,
+                    playMode: 'sequential'
+                };
+                this.PLAY_MODES = ['sequential', 'repeat_list', 'repeat_one', 'shuffle'];
 
-            // --- Initialization ---
-            const init = () => {
-                applyTheme(localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
-                
-                // [最终版] 只解析 V3 payload
+                this._cacheDOMElements();
+                this.audio = this.elements.audio;
+                this._init();
+            }
+
+            // --- 初始化方法 ---
+            _init() {
+                this._applyTheme(localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+                this._parseDataFromURL();
+                this._setupIcons();
+                this._bindEventListeners();
+                this._updateVolumeUI();
+            }
+
+            _cacheDOMElements() {
+                const $ = (id) => document.getElementById(id);
+                this.elements = {
+                    backgroundArt: $('background-art'), status: $('status'), workTitle: $('work-title'),
+                    coverArt: $('cover-art'), rjCode: $('rj-code-display'), currentTrackTitle: $('current-track-title'),
+                    audio: $('audio-player'), playlist: $('playlist'), prevBtn: $('prev-track'), nextBtn: $('next-track'),
+                    rewindBtn: $('rewind-btn'), forwardBtn: $('forward-btn'), rateSelector: $('playback-rate'),
+                    themeToggleBtn: $('theme-toggle'), downloadBtn: $('download-track'), playPauseBtn: $('play-pause-btn'),
+                    playIcon: $('play-icon'), pauseIcon: $('pause-icon'), progressContainer: $('progress-bar-container'),
+                    progressFilled: $('progress-filled'), currentTime: $('current-time'), totalDuration: $('total-duration'),
+                    playModeBtn: $('play-mode-btn'), sleepTimerSelect: $('sleep-timer-select'), sleepTimerDisplay: $('sleep-timer-display'),
+                    volumeBtn: $('volume-btn'), volumeSlider: $('volume-slider'),
+                };
+            }
+
+            _parseDataFromURL() {
                 try {
                     const params = new URLSearchParams(window.location.search);
                     const payloadParam = params.get('p');
@@ -273,229 +295,281 @@
                         const jsonString = pako.inflate(compressed, { to: 'string' });
                         const data = JSON.parse(jsonString);
                         
-                        if (data.c) {
-                            const coverUrl = data.c;
-                            elements.coverArt.src = coverUrl;
-                            elements.backgroundArt.style.backgroundImage = `url(${coverUrl})`;
-                            elements.backgroundArt.style.opacity = '1';
-                        }
-                        if (data.w) elements.workTitle.textContent = data.w;
-                        if (data.r) elements.rjCode.textContent = data.r;
+                        this._updateWorkInfo(data);
 
                         if (data.t && Array.isArray(data.t)) {
-                            state.tracks = data.t.map(track => ({
-                                src: track.u,
-                                title: track.t
-                            }));
-                            buildPlaylist();
-                            loadTrack(0);
+                            this.state.tracks = data.t.map(track => ({ src: track.u, title: track.t }));
+                            this._buildPlaylist();
+                            this.loadTrack(0);
                         } else {
                             throw new Error('Payload中音轨数据格式不正确');
                         }
                     } else {
-                        setError('未提供播放数据');
+                        this._setError('未提供播放数据');
                     }
                 } catch (e) {
-                    setError('加载播放列表失败，链接可能已损坏');
+                    this._setError('加载播放列表失败，链接可能已损坏');
                     console.error("Payload processing error:", e);
                 }
+            }
+
+            _bindEventListeners() {
+                // Audio events
+                this.audio.addEventListener('play', () => this._updatePlayPauseUI(true));
+                this.audio.addEventListener('pause', () => this._updatePlayPauseUI(false));
+                this.audio.addEventListener('ended', this._handleTrackEnd);
+                this.audio.addEventListener('timeupdate', this._updateProgress);
+                this.audio.addEventListener('loadedmetadata', this._updateProgress);
+                this.audio.addEventListener('volumechange', this._updateVolumeUI);
+                this.audio.addEventListener('error', () => this._setError(`音轨 ${this.state.currentIndex + 1} 加载失败`));
                 
-                setupEventListeners();
-                setupIcons();
-                updateVolumeUI();
-            };
+                // Control events
+                this.elements.playPauseBtn.addEventListener('click', this.togglePlayPause);
+                this.elements.prevBtn.addEventListener('click', this.prevTrack);
+                this.elements.nextBtn.addEventListener('click', this.nextTrack);
+                this.elements.rewindBtn.addEventListener('click', () => this.seek(-10));
+                this.elements.forwardBtn.addEventListener('click', () => this.seek(10));
+                this.elements.rateSelector.addEventListener('change', (e) => this.audio.playbackRate = parseFloat(e.target.value));
+                this.elements.downloadBtn.addEventListener('click', this._downloadCurrentTrack);
+                this.elements.themeToggleBtn.addEventListener('click', () => this._applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
+                this.elements.playModeBtn.addEventListener('click', this._cyclePlayMode);
+                this.elements.sleepTimerSelect.addEventListener('change', this._handleSleepTimerChange);
+                this.elements.volumeBtn.addEventListener('click', this._toggleMute);
+                this.elements.volumeSlider.addEventListener('input', (e) => this.audio.volume = e.target.value / 100);
+
+                // Playlist and Progress bar
+                this.elements.playlist.addEventListener('click', this._handlePlaylistClick);
+                this.elements.progressContainer.addEventListener('mousedown', this._startSeek);
+                window.addEventListener('mousemove', this._seeking);
+                window.addEventListener('mouseup', this._endSeek);
+
+                // Keyboard shortcuts
+                window.addEventListener('keydown', this._handleKeyDown);
+            }
+
+            // --- 核心播放逻辑 ---
+            loadTrack(index, autoPlay = false) {
+                if (index < 0 || index >= this.state.tracks.length) return;
+                this.state.currentIndex = index;
+                this.audio.src = this.state.tracks[index].src;
+                this.elements.currentTrackTitle.textContent = this.state.tracks[index].title;
+                this._updatePlaylistActive();
+                if (autoPlay) this.audio.play();
+            }
+
+            togglePlayPause = () => {
+                this.state.isPlaying ? this.audio.pause() : this.audio.play();
+            }
             
-            const flattenTrackTree = (nodes) => {
-                let flatList = [];
-                function recurse(items) {
-                    items.sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true }));
-                    for (const item of items) {
-                        if (item.type === 'audio' && item.mediaDownloadUrl) {
-                            flatList.push(item);
+            nextTrack = () => {
+                const newIndex = (this.state.currentIndex + 1) % this.state.tracks.length;
+                this.loadTrack(newIndex, this.state.isPlaying);
+            }
+
+            prevTrack = () => {
+                const newIndex = (this.state.currentIndex - 1 + this.state.tracks.length) % this.state.tracks.length;
+                this.loadTrack(newIndex, this.state.isPlaying);
+            }
+
+            seek = (delta) => {
+                this.audio.currentTime = Math.max(0, this.audio.currentTime + delta);
+            }
+
+            _handleTrackEnd = () => {
+                switch (this.state.playMode) {
+                    case 'repeat_one':
+                        this.audio.play();
+                        break;
+                    case 'shuffle':
+                        let newIndex;
+                        if (this.state.tracks.length <= 1) {
+                            newIndex = 0;
+                        } else {
+                            do { newIndex = Math.floor(Math.random() * this.state.tracks.length); } while (newIndex === this.state.currentIndex);
                         }
-                        if (item.children) {
-                            recurse(item.children);
+                        this.loadTrack(newIndex, true);
+                        break;
+                    case 'sequential':
+                        if (this.state.currentIndex < this.state.tracks.length - 1) {
+                            this.nextTrack();
+                        } else {
+                            this._updatePlayPauseUI(false);
                         }
-                    }
+                        break;
+                    case 'repeat_list':
+                        this.nextTrack();
+                        break;
                 }
-                recurse(nodes);
-                return flatList;
-            };
+            }
 
-            // --- Core Logic ---
-            const applyTheme = (theme) => { document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('theme', theme); };
-            const buildPlaylist = () => { elements.playlist.innerHTML = state.tracks.map((track, i) => `<li data-index="${i}"><span class="track-index">${i + 1}.</span><span class="track-title">${track.title}</span></li>`).join(''); };
-            const loadTrack = (index) => {
-                if (index < 0 || index >= state.tracks.length) return;
-                state.currentIndex = index;
-                elements.audio.src = state.tracks[index].src;
-                elements.currentTrackTitle.textContent = state.tracks[index].title;
-                document.querySelectorAll('#playlist li').forEach((li, i) => li.classList.toggle('active', i === index));
-            };
-            const playTrack = (index) => { loadTrack(index); elements.audio.play(); };
-            const handleTrackEnd = () => {
-                switch (currentPlayMode) {
-                    case 'repeat_one': elements.audio.play(); break;
-                    case 'shuffle': playTrack(getRandomTrackIndex()); break;
-                    case 'sequential': if (state.currentIndex < state.tracks.length - 1) playTrack(state.currentIndex + 1); else updateUI(false); break;
-                    case 'repeat_list': playTrack((state.currentIndex + 1) % state.tracks.length); break;
+            // --- UI 更新方法 ---
+            _updateWorkInfo(data) {
+                if (data.c) {
+                    this.elements.coverArt.src = data.c;
+                    this.elements.backgroundArt.style.backgroundImage = `url(${data.c})`;
+                    this.elements.backgroundArt.style.opacity = '1';
                 }
-            };
-            const getRandomTrackIndex = () => {
-                if (state.tracks.length <= 1) return 0;
-                let newIndex;
-                do { newIndex = Math.floor(Math.random() * state.tracks.length); } while (newIndex === state.currentIndex);
-                return newIndex;
-            };
+                if (data.w) this.elements.workTitle.textContent = data.w;
+                if (data.r) this.elements.rjCode.textContent = data.r;
+            }
 
-            // --- UI & Event Handlers ---
-            const setupIcons = () => {
-                elements.rewindBtn.innerHTML = ICONS.rewind;
-                elements.forwardBtn.innerHTML = ICONS.forward;
-                elements.prevBtn.innerHTML = ICONS.prev;
-                elements.nextBtn.innerHTML = ICONS.next;
-                elements.downloadBtn.innerHTML = ICONS.download;
-                updatePlayModeUI();
-            };
-
-            const setupEventListeners = () => {
-                elements.audio.addEventListener('play', () => updateUI(true));
-                elements.audio.addEventListener('pause', () => updateUI(false));
-                elements.audio.addEventListener('ended', handleTrackEnd);
-                elements.audio.addEventListener('timeupdate', updateProgress);
-                elements.audio.addEventListener('loadedmetadata', updateProgress);
-                elements.audio.addEventListener('volumechange', updateVolumeUI);
-                elements.audio.addEventListener('error', () => setError(`音轨 ${state.currentIndex + 1} 加载失败`));
-                
-                elements.playPauseBtn.addEventListener('click', () => state.isPlaying ? elements.audio.pause() : elements.audio.play());
-                elements.prevBtn.addEventListener('click', () => playTrack((state.currentIndex - 1 + state.tracks.length) % state.tracks.length));
-                elements.nextBtn.addEventListener('click', () => playTrack((state.currentIndex + 1) % state.tracks.length));
-                elements.rewindBtn.addEventListener('click', () => elements.audio.currentTime = Math.max(0, elements.audio.currentTime - 10));
-                elements.forwardBtn.addEventListener('click', () => elements.audio.currentTime += 10);
-                elements.rateSelector.addEventListener('change', (e) => elements.audio.playbackRate = parseFloat(e.target.value));
-                elements.downloadBtn.addEventListener('click', downloadCurrentTrack);
-                elements.themeToggleBtn.addEventListener('click', () => applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
-                elements.playModeBtn.addEventListener('click', cyclePlayMode);
-                elements.sleepTimerSelect.addEventListener('change', handleSleepTimerChange);
-                elements.volumeBtn.addEventListener('click', toggleMute);
-                elements.volumeSlider.addEventListener('input', (e) => elements.audio.volume = e.target.value / 100);
-
-                elements.playlist.addEventListener('click', (e) => e.target.closest('li') && playTrack(parseInt(e.target.closest('li').dataset.index, 10)));
-                elements.progressContainer.addEventListener('mousedown', (e) => { state.isSeeking = true; handleProgressSeek(e); });
-                window.addEventListener('mousemove', (e) => { if (state.isSeeking) { handleProgressSeek(e); updateProgress(); } });
-                window.addEventListener('mouseup', () => { if (state.isSeeking) state.isSeeking = false; });
-                window.addEventListener('keydown', (e) => {
-                    if (['INPUT', 'SELECT'].includes(document.activeElement.tagName)) return;
-                    if (e.key === ' ') { e.preventDefault(); elements.playPauseBtn.click(); }
-                    if (e.key === 'ArrowRight') { e.preventDefault(); elements.forwardBtn.click(); }
-                    if (e.key === 'ArrowLeft') { e.preventDefault(); elements.rewindBtn.click(); }
+            _buildPlaylist() {
+                this.elements.playlist.innerHTML = this.state.tracks
+                    .map((track, i) => `<li data-index="${i}"><span class="track-index">${i + 1}.</span><span class="track-title">${track.title}</span></li>`)
+                    .join('');
+            }
+            
+            _updatePlaylistActive() {
+                 this.elements.playlist.querySelectorAll('li').forEach((li, i) => {
+                    li.classList.toggle('active', i === this.state.currentIndex);
                 });
-            };
+            }
 
-            const updateUI = (playing) => {
-                state.isPlaying = playing;
-                elements.playIcon.style.display = state.isPlaying ? 'none' : 'block';
-                elements.pauseIcon.style.display = state.isPlaying ? 'block' : 'none';
-                elements.status.textContent = state.isPlaying ? `播放中... (音轨 ${state.currentIndex + 1}/${state.tracks.length})` : `已暂停 (音轨 ${state.currentIndex + 1}/${state.tracks.length})`;
-            };
+            _updatePlayPauseUI = (playing) => {
+                this.state.isPlaying = playing;
+                this.elements.playIcon.style.display = this.state.isPlaying ? 'none' : 'block';
+                this.elements.pauseIcon.style.display = this.state.isPlaying ? 'block' : 'none';
+                const statusText = `(音轨 ${this.state.currentIndex + 1}/${this.state.tracks.length})`;
+                this.elements.status.textContent = this.state.isPlaying ? `播放中... ${statusText}` : `已暂停 ${statusText}`;
+            }
 
-            const updateProgress = () => {
-                if (state.isSeeking) return;
-                const { duration, currentTime } = elements.audio;
+            _updateProgress = () => {
+                if (this.state.isSeeking) return;
+                const { duration, currentTime } = this.audio;
                 if (!isNaN(duration)) {
-                    elements.progressFilled.style.width = `${(currentTime / duration) * 100}%`;
-                    elements.currentTime.textContent = formatTime(currentTime);
-                    elements.totalDuration.textContent = formatTime(duration);
+                    this.elements.progressFilled.style.width = `${(currentTime / duration) * 100}%`;
+                    this.elements.currentTime.textContent = this._formatTime(currentTime);
+                    this.elements.totalDuration.textContent = this._formatTime(duration);
                 }
-            };
+            }
             
-            const handleProgressSeek = (e) => {
-                const rect = elements.progressContainer.getBoundingClientRect();
-                const clickX = e.clientX - rect.left;
-                const newTime = Math.max(0, Math.min(1, clickX / rect.width)) * elements.audio.duration;
-                if (!isNaN(newTime)) elements.audio.currentTime = newTime;
-            };
+            _updatePlayModeUI = () => {
+                const mode = ICONS.playModes[this.state.playMode];
+                this.elements.playModeBtn.innerHTML = mode.icon;
+                this.elements.playModeBtn.title = mode.title;
+            }
 
-            const downloadCurrentTrack = () => {
-                if (state.currentIndex < 0) return;
-                const { src, title } = state.tracks[state.currentIndex];
-                const a = document.createElement('a'); a.href = src; a.download = title || 'audio.wav';
-                document.body.appendChild(a); a.click(); document.body.removeChild(a);
-            };
+            _updateVolumeUI = () => {
+                const { volume, muted } = this.audio;
+                this.elements.volumeSlider.value = muted ? 0 : volume * 100;
+                if (muted || volume === 0) this.elements.volumeBtn.innerHTML = ICONS.volume.off;
+                else if (volume < 0.5) this.elements.volumeBtn.innerHTML = ICONS.volume.low;
+                else this.elements.volumeBtn.innerHTML = ICONS.volume.high;
+            }
 
-            const cyclePlayMode = () => {
-                const currentModeIndex = PLAY_MODES.indexOf(currentPlayMode);
-                currentPlayMode = PLAY_MODES[(currentModeIndex + 1) % PLAY_MODES.length];
-                updatePlayModeUI();
-            };
-            const updatePlayModeUI = () => {
-                const mode = ICONS.playModes[currentPlayMode];
-                elements.playModeBtn.innerHTML = mode.icon;
-                elements.playModeBtn.title = mode.title;
-            };
-
-            const updateVolumeUI = () => {
-                const { volume, muted } = elements.audio;
-                elements.volumeSlider.value = muted ? 0 : volume * 100;
-                if (muted || volume === 0) elements.volumeBtn.innerHTML = ICONS.volume.off;
-                else if (volume < 0.5) elements.volumeBtn.innerHTML = ICONS.volume.low;
-                else elements.volumeBtn.innerHTML = ICONS.volume.high;
-            };
-
-            const toggleMute = () => {
-                const { muted, volume } = elements.audio;
-                if (muted) {
-                    elements.audio.muted = false;
-                    elements.audio.volume = state.preMuteVolume;
-                } else {
-                    state.preMuteVolume = volume;
-                    elements.audio.muted = true;
+            _setupIcons() {
+                this.elements.rewindBtn.innerHTML = ICONS.rewind;
+                this.elements.forwardBtn.innerHTML = ICONS.forward;
+                this.elements.prevBtn.innerHTML = ICONS.prev;
+                this.elements.nextBtn.innerHTML = ICONS.next;
+                this.elements.downloadBtn.innerHTML = ICONS.download;
+                this._updatePlayModeUI();
+            }
+            
+            // --- 事件处理器 ---
+            _handlePlaylistClick = (e) => {
+                const targetLi = e.target.closest('li');
+                if (targetLi) {
+                    const index = parseInt(targetLi.dataset.index, 10);
+                    this.loadTrack(index, true);
                 }
-            };
+            }
+            
+            _startSeek = (e) => {
+                this.state.isSeeking = true;
+                this._handleProgressSeek(e);
+            }
+            _seeking = (e) => {
+                if (this.state.isSeeking) {
+                    this._handleProgressSeek(e);
+                    this._updateProgress();
+                }
+            }
+            _endSeek = () => {
+                if (this.state.isSeeking) this.state.isSeeking = false;
+            }
+            _handleProgressSeek = (e) => {
+                const rect = this.elements.progressContainer.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const newTime = Math.max(0, Math.min(1, clickX / rect.width)) * this.audio.duration;
+                if (!isNaN(newTime)) this.audio.currentTime = newTime;
+            }
 
-            const handleSleepTimerChange = (e) => {
+            _handleKeyDown = (e) => {
+                if (['INPUT', 'SELECT'].includes(document.activeElement.tagName)) return;
+                if (e.key === ' ') { e.preventDefault(); this.togglePlayPause(); }
+                if (e.key === 'ArrowRight') { e.preventDefault(); this.seek(10); }
+                if (e.key === 'ArrowLeft') { e.preventDefault(); this.seek(-10); }
+            }
+            
+            _cyclePlayMode = () => {
+                const currentModeIndex = this.PLAY_MODES.indexOf(this.state.playMode);
+                this.state.playMode = this.PLAY_MODES[(currentModeIndex + 1) % this.PLAY_MODES.length];
+                this._updatePlayModeUI();
+            }
+
+            _toggleMute = () => {
+                if (this.audio.muted) {
+                    this.audio.muted = false;
+                    this.audio.volume = this.state.preMuteVolume;
+                } else {
+                    this.state.preMuteVolume = this.audio.volume;
+                    this.audio.muted = true;
+                }
+            }
+
+            _handleSleepTimerChange = (e) => {
                 let minutes = parseInt(e.target.value, 10);
                 if (minutes === -1) {
                     const customMinutes = prompt("请输入您想在多少分钟后停止播放：", "15");
                     minutes = parseInt(customMinutes, 10);
                     if (isNaN(minutes) || minutes <= 0) {
-                        elements.sleepTimerSelect.value = "0";
-                        clearSleepTimer();
+                        this.elements.sleepTimerSelect.value = "0";
+                        this._clearSleepTimer();
                         return;
                     }
                 }
-                if (minutes > 0) setSleepTimer(minutes);
-                else clearSleepTimer();
-            };
+                if (minutes > 0) this._setSleepTimer(minutes);
+                else this._clearSleepTimer();
+            }
             
-            const setSleepTimer = (minutes) => {
-                clearSleepTimer();
-                state.sleepTimerRemaining = minutes * 60;
-                state.sleepTimerId = setInterval(updateSleepTimerDisplay, 1000);
-            };
-            
-            const clearSleepTimer = () => {
-                if (state.sleepTimerId) { clearInterval(state.sleepTimerId); state.sleepTimerId = null; }
-                elements.sleepTimerDisplay.textContent = '';
-            };
+            // --- 辅助方法 ---
+            _applyTheme(theme) { document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('theme', theme); }
+            _setError(msg) { this.elements.status.textContent = msg; }
+            _formatTime(seconds) { return isNaN(seconds) ? '0:00' : new Date(seconds * 1000).toISOString().substr(14, 5); }
+            _downloadCurrentTrack = () => {
+                if (this.state.currentIndex < 0) return;
+                const { src, title } = this.state.tracks[this.state.currentIndex];
+                const a = document.createElement('a'); a.href = src; a.download = title || 'audio.wav';
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            }
 
-            const updateSleepTimerDisplay = () => {
-                if (state.sleepTimerRemaining <= 0) {
-                    elements.audio.pause();
-                    elements.sleepTimerSelect.value = "0";
-                    clearSleepTimer();
+            _setSleepTimer(minutes) {
+                this._clearSleepTimer();
+                this.state.sleepTimerRemaining = minutes * 60;
+                this.state.sleepTimerId = setInterval(this._updateSleepTimerDisplay, 1000);
+            }
+            _clearSleepTimer() {
+                if (this.state.sleepTimerId) { clearInterval(this.state.sleepTimerId); this.state.sleepTimerId = null; }
+                this.elements.sleepTimerDisplay.textContent = '';
+            }
+            _updateSleepTimerDisplay = () => {
+                if (this.state.sleepTimerRemaining <= 0) {
+                    this.audio.pause();
+                    this.elements.sleepTimerSelect.value = "0";
+                    this._clearSleepTimer();
                 } else {
-                    state.sleepTimerRemaining--;
-                    const mins = Math.floor(state.sleepTimerRemaining / 60);
-                    const secs = state.sleepTimerRemaining % 60;
-                    elements.sleepTimerDisplay.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+                    this.state.sleepTimerRemaining--;
+                    const mins = Math.floor(this.state.sleepTimerRemaining / 60);
+                    const secs = this.state.sleepTimerRemaining % 60;
+                    this.elements.sleepTimerDisplay.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
                 }
-            };
-            
-            const formatTime = (seconds) => isNaN(seconds) ? '0:00' : new Date(seconds * 1000).toISOString().substr(14, 5);
-            const setError = (msg) => elements.status.textContent = msg;
+            }
+        }
 
-            init();
+        // --- 3. 实例化 Player ---
+        document.addEventListener('DOMContentLoaded', () => {
+            new Player();
         });
     </script>
 </body>
