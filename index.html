@@ -261,7 +261,7 @@
             const init = () => {
                 applyTheme(localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
                 
-                // [已重构] URL参数解析逻辑 (支持V1和V2)
+                // [已重构] URL参数解析逻辑 (支持V1, V2, V3)
                 try {
                     const params = new URLSearchParams(window.location.search);
                     const payloadParam = params.get('p');
@@ -273,10 +273,32 @@
                         const data = JSON.parse(jsonString);
                         
                         // 根据版本号选择解析方式
-                        if (data.v === 2) {
-                            // --- V2 Payload Logic ---
+                        if (data.v === 3) {
+                            // --- V3 Payload Logic ---
                             const rjId = data.r ? data.r.replace(/^RJ/i, '') : null;
-                            const coverUrl = rjId ? `${data.c || 'https://api.asmr-200.com/api/cover/'}${rjId}.jpg?type=main` : null;
+                            const coverUrl = (data.cd && rjId) ? `${data.cd}/api/cover/${rjId}.jpg?type=main` : null;
+
+                            if (coverUrl) {
+                                elements.coverArt.src = coverUrl;
+                                elements.backgroundArt.style.backgroundImage = `url(${coverUrl})`;
+                                elements.backgroundArt.style.opacity = '1';
+                            }
+                            if (data.w) elements.workTitle.textContent = data.w;
+                            if (data.r) elements.rjCode.textContent = data.r;
+
+                            if (data.t && Array.isArray(data.t)) {
+                                state.tracks = data.t.map(track => ({
+                                    src: track.u,
+                                    title: track.t
+                                }));
+                                buildPlaylist();
+                                loadTrack(0);
+                            } else { setError('V3数据负载不完整'); }
+
+                        } else if (data.v === 2) {
+                            // --- V2 Payload Logic (兼容) ---
+                             const rjId = data.r ? data.r.replace(/^RJ/i, '') : null;
+                            const coverUrl = rjId ? `https://api.asmr-200.com/api/cover/${rjId}.jpg?type=main` : null;
 
                             if (coverUrl) {
                                 elements.coverArt.src = coverUrl;
@@ -289,15 +311,14 @@
                             if (data.b && data.t && Array.isArray(data.t)) {
                                 state.tracks = data.t.map(filename => ({
                                     src: data.b + filename,
-                                    title: decodeURIComponent(filename).replace(/\.\w+$/, '') // 从文件名推导标题
+                                    title: decodeURIComponent(filename).replace(/\.\w+$/, '')
                                 }));
                                 buildPlaylist();
                                 loadTrack(0);
                             } else { setError('V2数据负载不完整'); }
-
                         } else {
-                            // --- V1 Payload Logic (向后兼容) ---
-                            if (data.cover) {
+                            // --- Fallback/V1 Payload Logic (兼容) ---
+                             if (data.cover) {
                                 elements.coverArt.src = data.cover;
                                 elements.backgroundArt.style.backgroundImage = `url(${data.cover})`;
                                 elements.backgroundArt.style.opacity = '1';
@@ -306,7 +327,7 @@
                             if (data.rjCode) elements.rjCode.textContent = data.rjCode;
 
                             if (data.tracks && Array.isArray(data.tracks)) {
-                                state.tracks = data.tracks; // V1直接使用tracks数组
+                                state.tracks = data.tracks;
                                 buildPlaylist();
                                 loadTrack(0);
                             } else { setError('V1数据负载不完整'); }
