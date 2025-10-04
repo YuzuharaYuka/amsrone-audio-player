@@ -5,79 +5,272 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ASMR ONE 在线播放器</title>
     <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+        :root {
+            --bg-color: #1a1a1a;
+            --primary-text-color: #e6e6e6;
+            --secondary-text-color: #999;
+            --accent-color: #4ec9b0;
+            --surface-color: #242424;
+            --highlight-color: #333;
+            --border-color: #3a3a3a;
+        }
+
+        html, body {
+            height: 100%;
             margin: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f4f7f9;
-            color: #333;
+            background-color: var(--bg-color);
+            color: var(--primary-text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 16px;
         }
+
         .container {
+            width: 95%;
+            max-width: 800px;
+            height: 90%;
+            max-height: 700px;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--surface-color);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .player-main {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        #status, #current-track-title {
             text-align: center;
-            padding: 20px;
+            margin: 0 0 16px 0;
+            padding: 0 12px;
+            word-break: break-word;
         }
+
         #status {
-            margin-bottom: 20px;
             font-size: 1.2em;
-            color: #555;
+            color: var(--secondary-text-color);
         }
+        
+        #current-track-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            min-height: 2em; /* 避免标题切换时布局跳动 */
+        }
+
         audio {
-            width: 90%;
-            max-width: 700px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            border-radius: 90px;
-            outline: none;
+            width: 100%;
+            margin-bottom: 16px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .controls button, .controls select {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--primary-text-color);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .controls button:hover, .controls select:hover {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+            color: #fff;
+        }
+
+        .controls select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            padding-right: 30px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23e6e6e6' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 12px;
+        }
+
+        .playlist-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+
+        #playlist {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #playlist li {
+            padding: 14px 24px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #playlist li:hover {
+            background-color: var(--highlight-color);
+        }
+
+        #playlist li.active {
+            background-color: var(--accent-color);
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .track-index {
+            color: var(--secondary-text-color);
+            font-style: italic;
+            min-width: 20px;
+        }
+        
+        #playlist li.active .track-index {
+            color: #fff;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2 id="status">正在加载音频...</h2>
-        <audio id="audio-player" controls autoplay controlsList="nodownload">
-            您的浏览器不支持在线播放音频。
-        </audio>
+        <div class="player-main">
+            <h2 id="current-track-title">播放器</h2>
+            <p id="status">正在初始化...</p>
+            <audio id="audio-player" controls controlsList="nodownload"></audio>
+            <div class="controls">
+                <button id="prev-track">上一曲</button>
+                <button id="rewind-10s">« 10s</button>
+                <select id="playback-rate">
+                    <option value="0.5">0.5x</option>
+                    <option value="0.75">0.75x</option>
+                    <option value="1" selected>1.0x</option>
+                    <option value="1.25">1.25x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2.0x</option>
+                </select>
+                <button id="forward-10s">10s »</button>
+                <button id="next-track">下一曲</button>
+            </div>
+        </div>
+        <div class="playlist-container">
+            <ol id="playlist"></ol>
+        </div>
     </div>
 
     <script>
-        // 这段脚本会在页面加载时立即执行
         document.addEventListener('DOMContentLoaded', () => {
-            const statusElement = document.getElementById('status');
-            const audioElement = document.getElementById('audio-player');
+            const statusEl = document.getElementById('status');
+            const titleEl = document.getElementById('current-track-title');
+            const audioEl = document.getElementById('audio-player');
+            const playlistEl = document.getElementById('playlist');
 
-            // 1. 获取当前浏览器地址栏中的 URL 查询参数
+            // 控件
+            const prevBtn = document.getElementById('prev-track');
+            const nextBtn = document.getElementById('next-track');
+            const rewindBtn = document.getElementById('rewind-10s');
+            const forwardBtn = document.getElementById('forward-10s');
+            const rateSelector = document.getElementById('playback-rate');
+
+            let tracks = [];
+            let currentIndex = -1;
+
+            // 核心逻辑：解析URL参数
             const params = new URLSearchParams(window.location.search);
+            const audioUrls = params.getAll('audio');
+            let audioTitles = params.getAll('title');
+            
+            // 如果只传了一个 audio 参数而没有 title，自动生成一个标题
+            if (audioUrls.length === 1 && audioTitles.length === 0) {
+                audioTitles.push('音频轨道');
+            }
 
-            // 2. 尝试获取名为 'audio' 的参数值
-            const audioSrc = params.get('audio');
-
-            // 3. 判断参数是否存在且不为空
-            if (audioSrc) {
+            if (audioUrls.length > 0 && audioUrls.length === audioTitles.length) {
                 try {
-                    // 对URL进行解码，以防传入的是编码后的链接
-                    const decodedUrl = decodeURIComponent(audioSrc);
-                    // 4. 将获取到的链接设置为播放器的音源
-                    audioElement.src = decodedUrl;
-                    statusElement.textContent = '音频已加载，请点击播放';
-                    
-                    // 监听音频错误事件，提供更友好的提示
-                    audioElement.addEventListener('error', () => {
-                        statusElement.textContent = '音频加载失败，链接可能已失效或无法访问。';
-                        console.error('音频错误:', audioElement.error);
-                    });
-
+                    tracks = audioUrls.map((url, index) => ({
+                        src: decodeURIComponent(url),
+                        title: decodeURIComponent(audioTitles[index])
+                    }));
+                    buildPlaylist();
+                    playTrack(0);
                 } catch (e) {
-                    statusElement.textContent = '提供的音频链接格式无效。';
+                    setError('音频链接格式无效。');
                     console.error('URL解码失败:', e);
                 }
             } else {
-                // 5. 如果 URL 中没有 'audio' 参数，则显示提示信息
-                statusElement.textContent = '未提供音频链接。';
-                audioElement.style.display = 'none'; // 隐藏播放器
+                setError('未提供有效的音频链接或标题。');
             }
+
+            function buildPlaylist() {
+                playlistEl.innerHTML = '';
+                tracks.forEach((track, index) => {
+                    const li = document.createElement('li');
+                    li.dataset.index = index;
+                    li.innerHTML = `<span class="track-index">${index + 1}.</span> <span class="track-title">${track.title}</span>`;
+                    li.addEventListener('click', () => playTrack(index));
+                    playlistEl.appendChild(li);
+                });
+            }
+
+            function playTrack(index) {
+                if (index < 0 || index >= tracks.length) return;
+
+                currentIndex = index;
+                const track = tracks[index];
+                
+                audioEl.src = track.src;
+                titleEl.textContent = track.title;
+                statusEl.textContent = `共 ${tracks.length} 个音轨`;
+
+                audioEl.play().catch(e => console.warn("播放被中断或失败:", e));
+
+                // 更新播放列表UI
+                const activeItem = playlistEl.querySelector('.active');
+                if (activeItem) activeItem.classList.remove('active');
+                playlistEl.children[index].classList.add('active');
+            }
+            
+            function playNext() {
+                const nextIndex = (currentIndex + 1) % tracks.length;
+                playTrack(nextIndex);
+            }
+
+            function playPrev() {
+                const prevIndex = (currentIndex - 1 + tracks.length) % tracks.length;
+                playTrack(prevIndex);
+            }
+
+            function setError(message) {
+                statusEl.textContent = message;
+                titleEl.style.display = 'none';
+                audioEl.style.display = 'none';
+                document.querySelector('.controls').style.display = 'none';
+            }
+
+            // --- 事件监听 ---
+            audioEl.addEventListener('ended', playNext);
+            audioEl.addEventListener('error', () => {
+                statusEl.textContent = '当前音轨加载失败，可能已失效。';
+            });
+            prevBtn.addEventListener('click', playPrev);
+            nextBtn.addEventListener('click', playNext);
+            rewindBtn.addEventListener('click', () => { audioEl.currentTime = Math.max(0, audioEl.currentTime - 10); });
+            forwardBtn.addEventListener('click', () => { audioEl.currentTime += 10; });
+            rateSelector.addEventListener('change', (e) => { audioEl.playbackRate = parseFloat(e.target.value); });
         });
     </script>
 </body>
