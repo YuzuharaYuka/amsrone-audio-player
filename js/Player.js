@@ -172,9 +172,11 @@ export class Player {
             const objectUrl = URL.createObjectURL(blob);
             this.state.currentObjectUrl = objectUrl;
             this.audio.src = objectUrl;
+            // 新增: 调试信息
             console.log(`Track ${index+1} loaded from cache.`);
         } else {
             this.audio.src = this.state.tracks[index].src;
+            // 新增: 调试信息
             console.log(`Track ${index+1} loaded from network.`);
         }
         this._updatePlaylistActive();

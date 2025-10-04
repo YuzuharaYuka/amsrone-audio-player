@@ -108,7 +108,8 @@ body {
 audio { display: none; }
 .custom-audio-player { margin-bottom: 1rem; }
 .progress-bar-container { width: 100%; cursor: pointer; padding: 10px 0; }
-.progress-bar { height: 6px; background-color: var(--track-bg); border-radius: 3px; position: relative; overflow: hidden; }
+/* 修复：移除 overflow: hidden 以确保伪元素在移动端可见 */
+.progress-bar { height: 6px; background-color: var(--track-bg); border-radius: 3px; position: relative; }
 
 .progress-buffered {
     position: absolute; top: 0; left: 0;
