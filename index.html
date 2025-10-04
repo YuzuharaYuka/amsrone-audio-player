@@ -259,9 +259,10 @@
             };
 
             // --- Initialization ---
-            const init = async () => {
+            const init = () => {
                 applyTheme(localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
                 
+                // [最终版] 只解析 V3 payload
                 try {
                     const params = new URLSearchParams(window.location.search);
                     const payloadParam = params.get('p');
@@ -272,65 +273,30 @@
                         const jsonString = pako.inflate(compressed, { to: 'string' });
                         const data = JSON.parse(jsonString);
                         
-                        // Main V4 logic
-                        if (data.v >= 4) {
-                            elements.status.textContent = '正在从服务器获取播放列表...';
-                            const rjId = data.r.replace(/^RJ/i, '');
+                        if (data.c) {
+                            const coverUrl = data.c;
+                            elements.coverArt.src = coverUrl;
+                            elements.backgroundArt.style.backgroundImage = `url(${coverUrl})`;
+                            elements.backgroundArt.style.opacity = '1';
+                        }
+                        if (data.w) elements.workTitle.textContent = data.w;
+                        if (data.r) elements.rjCode.textContent = data.r;
 
-                            const [workInfo, allTracksRaw] = await Promise.all([
-                                fetch(`${data.a}/workInfo/${rjId}`).then(res => res.json()),
-                                fetch(`${data.a}/tracks/${rjId}`).then(res => res.json())
-                            ]);
-
-                            if (workInfo) {
-                                elements.workTitle.textContent = workInfo.title;
-                                elements.rjCode.textContent = data.r;
-                                const coverUrl = workInfo.mainCoverUrl;
-                                if (coverUrl) {
-                                    elements.coverArt.src = coverUrl;
-                                    elements.backgroundArt.style.backgroundImage = `url(${coverUrl})`;
-                                    elements.backgroundArt.style.opacity = '1';
-                                }
-                            }
-
-                            if (allTracksRaw) {
-                                const allDownloadableTracks = flattenTrackTree(allTracksRaw);
-                                state.tracks = data.s.map(index => {
-                                    const track = allDownloadableTracks[index - 1];
-                                    return track ? { src: track.mediaDownloadUrl, title: track.title } : null;
-                                }).filter(Boolean);
-                                
-                                buildPlaylist();
-                                loadTrack(0);
-                            } else { throw new Error('获取音轨列表失败'); }
-
-                        } 
-                        // Backward compatibility
-                        else if (data.v === 3) {
-                            const rjId = data.r ? data.r.replace(/^RJ/i, '') : null;
-                            const coverUrl = (data.cd && rjId) ? `${data.cd}/api/cover/${rjId}.jpg?type=main` : null;
-                            if (coverUrl) { elements.coverArt.src = coverUrl; elements.backgroundArt.style.backgroundImage = `url(${coverUrl})`; elements.backgroundArt.style.opacity = '1'; }
-                            if (data.w) elements.workTitle.textContent = data.w;
-                            if (data.r) elements.rjCode.textContent = data.r;
-                            if (data.t && Array.isArray(data.t)) { state.tracks = data.t.map(track => ({ src: track.u, title: track.t })); buildPlaylist(); loadTrack(0); } else { setError('V3数据负载不完整'); }
-                        } else if (data.v === 2) {
-                            const rjId = data.r ? data.r.replace(/^RJ/i, '') : null;
-                            const coverUrl = rjId ? `https://api.asmr-200.com/api/cover/${rjId}.jpg?type=main` : null;
-                            if (coverUrl) { elements.coverArt.src = coverUrl; elements.backgroundArt.style.backgroundImage = `url(${coverUrl})`; elements.backgroundArt.style.opacity = '1'; }
-                            if (data.w) elements.workTitle.textContent = data.w;
-                            if (data.r) elements.rjCode.textContent = data.r;
-                            if (data.b && data.t && Array.isArray(data.t)) { state.tracks = data.t.map(filename => ({ src: data.b + filename, title: decodeURIComponent(filename).replace(/\.\w+$/, '') })); buildPlaylist(); loadTrack(0); } else { setError('V2数据负载不完整'); }
+                        if (data.t && Array.isArray(data.t)) {
+                            state.tracks = data.t.map(track => ({
+                                src: track.u,
+                                title: track.t
+                            }));
+                            buildPlaylist();
+                            loadTrack(0);
                         } else {
-                            if (data.cover) { elements.coverArt.src = data.cover; elements.backgroundArt.style.backgroundImage = `url(${data.cover})`; elements.backgroundArt.style.opacity = '1'; }
-                            if (data.workTitle) elements.workTitle.textContent = data.workTitle;
-                            if (data.rjCode) elements.rjCode.textContent = data.rjCode;
-                            if (data.tracks && Array.isArray(data.tracks)) { state.tracks = data.tracks; buildPlaylist(); loadTrack(0); } else { setError('V1数据负载不完整'); }
+                            throw new Error('Payload中音轨数据格式不正确');
                         }
                     } else {
                         setError('未提供播放数据');
                     }
                 } catch (e) {
-                    setError('加载播放列表失败，链接可能已损坏或API无法访问');
+                    setError('加载播放列表失败，链接可能已损坏');
                     console.error("Payload processing error:", e);
                 }
                 
