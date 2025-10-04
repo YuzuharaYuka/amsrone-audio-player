@@ -58,16 +58,16 @@ export class Player {
                 const jsonString = pako.inflate(compressed, { to: 'string' });
                 const data = JSON.parse(jsonString);
 
-                // --- V4 负载处理 ---
-                const baseUrl = data.b || ''; // 获取 base url, 默认为空字符串
+                // --- V5 负载处理 ---
+                const baseUrl = data.b || '';
 
-                this._updateWorkInfo(data, baseUrl); // 将 baseUrl 传递给UI更新函数
+                this._updateWorkInfo(data, baseUrl);
                 
                 if (data.t && Array.isArray(data.t)) {
-                    // 重组完整的 track URL
+                    // 使用新的键名 p 和 n
                     this.state.tracks = data.t.map(track => ({
-                        src: baseUrl + track.u, 
-                        title: track.t 
+                        src: baseUrl + track.p, 
+                        title: track.n 
                     }));
                     this._buildPlaylist();
                     this.loadTrack(0);
@@ -81,7 +81,6 @@ export class Player {
 
     _updateWorkInfo(data, baseUrl = '') {
         if (data.c) {
-            // 重组完整的封面 URL
             const fullCoverUrl = baseUrl + data.c;
             this.elements.coverArt.src = fullCoverUrl;
             this.elements.backgroundArt.style.backgroundImage = `url(${fullCoverUrl})`;
@@ -96,7 +95,7 @@ export class Player {
         }
     }
 
-    // ( ... 其他所有方法保持不变 ... )
+    // ... (其余代码与上一个版本完全相同)
     _bindEventListeners() {
         this.audio.addEventListener('play', () => {
             this._updatePlayPauseUI(true);
