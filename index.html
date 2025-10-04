@@ -9,14 +9,14 @@
             --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
             /* Light Theme */
             --bg-primary-light: #f5f7fa; --bg-secondary-light: rgba(255, 255, 255, 0.85);
-            --text-primary-light: #111827; --text-secondary-light: #4b5563; /* Increased contrast */
+            --text-primary-light: #111827; --text-secondary-light: #4b5563;
             --accent-primary-light: #0d9488; --accent-secondary-light: #f0fdfa;
             --border-light: rgba(0, 0, 0, 0.1); --shadow-light: rgba(0, 0, 0, 0.05);
             --track-bg-light: #e5e7eb; --thumb-bg-light: #1f2937;
 
             /* Dark Theme */
             --bg-primary-dark: #111827; --bg-secondary-dark: rgba(31, 41, 55, 0.85);
-            --text-primary-dark: #f9fafb; --text-secondary-dark: #d1d5db; /* Increased contrast */
+            --text-primary-dark: #f9fafb; --text-secondary-dark: #d1d5db;
             --accent-primary-dark: #2dd4bf; --accent-secondary-dark: #1e3a37;
             --border-dark: rgba(255, 255, 255, 0.1); --shadow-dark: rgba(0, 0, 0, 0.2);
             --track-bg-dark: #4b5563; --thumb-bg-dark: #f9fafb;
@@ -85,7 +85,7 @@
 
         audio { display: none; }
 
-        .custom-audio-player { margin-bottom: 2rem; }
+        .custom-audio-player { margin-bottom: 1rem; }
         .progress-bar-container { width: 100%; cursor: pointer; padding: 10px 0; }
         .progress-bar { height: 6px; background-color: var(--track-bg); border-radius: 3px; position: relative; }
         .progress-filled { height: 100%; width: 0; background-color: var(--accent-primary); border-radius: 3px; position: relative; pointer-events: none; }
@@ -107,17 +107,23 @@
         .play-pause-btn svg { width: 40px; height: 40px; }
         #rewind-btn svg, #forward-btn svg { width: 32px; height: 32px; }
 
-        .extra-controls { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; }
-        .extra-controls select {
+        .extra-controls { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: 1.5rem; }
+        .volume-control { display: flex; align-items: center; gap: 0.5rem; flex-grow: 1; max-width: 200px; }
+        .volume-control button { background: none; border: none; cursor: pointer; color: var(--text-secondary); padding: 0.25rem; }
+        .volume-control button svg { width: 20px; height: 20px; }
+        input[type="range"].volume-slider { flex-grow: 1; margin: 0; accent-color: var(--accent-primary); }
+
+        .secondary-controls { display: flex; align-items: center; gap: 1rem; }
+        .secondary-controls select {
             background-color: transparent; border: 1px solid var(--border-color); color: var(--text-secondary);
             padding: 0.5rem 1rem; border-radius: 99px; cursor: pointer; font-size: 0.9rem;
             font-family: inherit; transition: all 0.2s ease;
         }
-        .extra-controls select { padding-right: 2rem; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%239ca3af' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.7rem center; background-size: 10px; text-align: center; text-align-last: center; }
-        .extra-controls select:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
+        .secondary-controls select { padding-right: 2rem; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%239ca3af' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.7rem center; background-size: 10px; text-align: center; text-align-last: center; }
+        .secondary-controls select:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
         #sleep-timer-display { font-size: 0.9rem; color: var(--accent-primary); font-family: monospace; min-width: 50px; text-align: right; }
         
-        .playlist-container { flex-grow: 1; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; }
+        .playlist-container { flex-grow: 1; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; margin-top: 1.5rem; }
         #playlist { list-style: none; padding: 0; margin: 0; }
         #playlist li {
             padding: 1rem 1.5rem; cursor: pointer; border-bottom: 1px solid var(--border-color);
@@ -139,6 +145,8 @@
             .album-art-section { flex-basis: auto; padding: 1.5rem; border-bottom: 1px solid var(--border-color); }
             .controls-and-playlist-section { border-left: none; padding: 1.5rem; }
             .cover-art-wrapper { max-width: 300px; }
+            .extra-controls { flex-direction: column; align-items: stretch; gap: 0.75rem; }
+            .volume-control { max-width: none; }
         }
     </style>
 </head>
@@ -169,26 +177,32 @@
                     <div class="time-display"><span id="current-time">0:00</span><span id="total-duration">0:00</span></div>
                     <div class="main-controls">
                         <button id="play-mode-btn" title="顺序播放"></button>
-                        <button id="rewind-btn" title="后退10秒"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M11 18V6l-8.5 6 8.5 6zm-2-6l6-4.5v9l-6-4.5z"/></svg></button>
-                        <button id="prev-track" title="上一曲"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
+                        <button id="rewind-btn" title="后退10秒"></button>
+                        <button id="prev-track" title="上一曲"></button>
                         <button id="play-pause-btn" class="play-pause-btn" title="播放/暂停">
                             <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                             <svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                         </button>
-                        <button id="next-track" title="下一曲"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
-                        <button id="forward-btn" title="快进10秒"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 18l8.5-6L4 6v12zm9-12v9l6-4.5-6-4.5z"/></svg></button>
+                        <button id="next-track" title="下一曲"></button>
+                        <button id="forward-btn" title="快进10秒"></button>
                         <button id="download-track" title="下载当前音轨"></button>
                     </div>
                 </div>
 
                 <div class="extra-controls">
-                    <select id="playback-rate">
-                        <option value="0.75">0.75x</option><option value="1" selected>1.0x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="2.0">2.0x</option>
-                    </select>
-                    <select id="sleep-timer-select">
-                        <option value="0">定时停止</option><option value="15">15分钟</option><option value="30">30分钟</option><option value="60">60分钟</option><option value="90">90分钟</option><option value="-1">自定义</option>
-                    </select>
-                    <span id="sleep-timer-display"></span>
+                    <div class="volume-control">
+                        <button id="volume-btn" title="静音"></button>
+                        <input type="range" id="volume-slider" class="volume-slider" min="0" max="100" value="100">
+                    </div>
+                    <div class="secondary-controls">
+                        <select id="playback-rate">
+                            <option value="0.75">0.75x</option><option value="1" selected>1.0x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="2.0">2.0x</option>
+                        </select>
+                        <select id="sleep-timer-select">
+                            <option value="0">定时停止</option><option value="15">15分钟</option><option value="30">30分钟</option><option value="60">60分钟</option><option value="90">90分钟</option><option value="-1">自定义</option>
+                        </select>
+                        <span id="sleep-timer-display"></span>
+                    </div>
                 </div>
                 <div class="playlist-container">
                     <ol id="playlist"></ol>
@@ -215,17 +229,27 @@
                 playIcon: $('play-icon'), pauseIcon: $('pause-icon'), progressContainer: $('progress-bar-container'),
                 progressFilled: $('progress-filled'), currentTime: $('current-time'), totalDuration: $('total-duration'),
                 playModeBtn: $('play-mode-btn'), sleepTimerSelect: $('sleep-timer-select'), sleepTimerDisplay: $('sleep-timer-display'),
+                volumeBtn: $('volume-btn'), volumeSlider: $('volume-slider'),
             };
 
             // --- State & Constants ---
-            let state = { tracks: [], currentIndex: -1, isPlaying: false, isSeeking: false, sleepTimerId: null, sleepTimerRemaining: 0 };
+            let state = { tracks: [], currentIndex: -1, isPlaying: false, isSeeking: false, sleepTimerId: null, sleepTimerRemaining: 0, preMuteVolume: 1 };
             const PLAY_MODES = ['sequential', 'repeat_list', 'repeat_one', 'shuffle'];
             let currentPlayMode = PLAY_MODES[0];
             
             const ICONS = {
+                rewind: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M11 18V6l-8.5 6 8.5 6zm-2-6l6-4.5v9l-6-4.5z"/></svg>`,
+                forward: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 18l8.5-6L4 6v12zm9-12v9l6-4.5-6-4.5z"/></svg>`,
+                prev: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>`,
+                next: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>`,
                 download: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>`,
+                volume: {
+                    high: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>`,
+                    low: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z"/></svg>`,
+                    off: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>`
+                },
                 playModes: {
-                    sequential: { icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 15h18v-2H3v2zm0 4h18v-2H3v2zm0-8h18V9H3v2zm0-6v2h18V5H3z"/></svg>`, title: '顺序播放'},
+                    sequential: { icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" /></svg>`, title: '顺序播放'},
                     repeat_list: { icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>`, title: '列表循环'},
                     repeat_one: { icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4zm-4-2V9h-1v4h-1v2h2v-2z"/></svg>`, title: '单曲循环'},
                     shuffle: { icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>`, title: '随机播放'},
@@ -257,8 +281,8 @@
                 } catch (e) { setError('链接参数解析失败'); console.error(e); }
                 
                 setupEventListeners();
-                updatePlayModeUI();
-                elements.downloadBtn.innerHTML = ICONS.download;
+                setupIcons();
+                updateVolumeUI();
             };
 
             // --- Core Logic ---
@@ -288,12 +312,22 @@
             };
 
             // --- UI & Event Handlers ---
+            const setupIcons = () => {
+                elements.rewindBtn.innerHTML = ICONS.rewind;
+                elements.forwardBtn.innerHTML = ICONS.forward;
+                elements.prevBtn.innerHTML = ICONS.prev;
+                elements.nextBtn.innerHTML = ICONS.next;
+                elements.downloadBtn.innerHTML = ICONS.download;
+                updatePlayModeUI();
+            };
+
             const setupEventListeners = () => {
                 elements.audio.addEventListener('play', () => updateUI(true));
                 elements.audio.addEventListener('pause', () => updateUI(false));
                 elements.audio.addEventListener('ended', handleTrackEnd);
                 elements.audio.addEventListener('timeupdate', updateProgress);
                 elements.audio.addEventListener('loadedmetadata', updateProgress);
+                elements.audio.addEventListener('volumechange', updateVolumeUI);
                 elements.audio.addEventListener('error', () => setError(`音轨 ${state.currentIndex + 1} 加载失败`));
                 
                 elements.playPauseBtn.addEventListener('click', () => state.isPlaying ? elements.audio.pause() : elements.audio.play());
@@ -306,6 +340,8 @@
                 elements.themeToggleBtn.addEventListener('click', () => applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
                 elements.playModeBtn.addEventListener('click', cyclePlayMode);
                 elements.sleepTimerSelect.addEventListener('change', handleSleepTimerChange);
+                elements.volumeBtn.addEventListener('click', toggleMute);
+                elements.volumeSlider.addEventListener('input', (e) => elements.audio.volume = e.target.value / 100);
 
                 elements.playlist.addEventListener('click', (e) => e.target.closest('li') && playTrack(parseInt(e.target.closest('li').dataset.index, 10)));
                 elements.progressContainer.addEventListener('mousedown', (e) => { state.isSeeking = true; handleProgressSeek(e); });
@@ -339,7 +375,7 @@
             const handleProgressSeek = (e) => {
                 const rect = elements.progressContainer.getBoundingClientRect();
                 const clickX = e.clientX - rect.left;
-                const newTime = (clickX / rect.width) * elements.audio.duration;
+                const newTime = Math.max(0, Math.min(1, clickX / rect.width)) * elements.audio.duration;
                 if (!isNaN(newTime)) elements.audio.currentTime = newTime;
             };
 
@@ -359,6 +395,25 @@
                 const mode = ICONS.playModes[currentPlayMode];
                 elements.playModeBtn.innerHTML = mode.icon;
                 elements.playModeBtn.title = mode.title;
+            };
+
+            const updateVolumeUI = () => {
+                const { volume, muted } = elements.audio;
+                elements.volumeSlider.value = muted ? 0 : volume * 100;
+                if (muted || volume === 0) elements.volumeBtn.innerHTML = ICONS.volume.off;
+                else if (volume < 0.5) elements.volumeBtn.innerHTML = ICONS.volume.low;
+                else elements.volumeBtn.innerHTML = ICONS.volume.high;
+            };
+
+            const toggleMute = () => {
+                const { muted, volume } = elements.audio;
+                if (muted) {
+                    elements.audio.muted = false;
+                    elements.audio.volume = state.preMuteVolume;
+                } else {
+                    state.preMuteVolume = volume;
+                    elements.audio.muted = true;
+                }
             };
 
             const handleSleepTimerChange = (e) => {
@@ -383,10 +438,7 @@
             };
             
             const clearSleepTimer = () => {
-                if (state.sleepTimerId) {
-                    clearInterval(state.sleepTimerId);
-                    state.sleepTimerId = null;
-                }
+                if (state.sleepTimerId) { clearInterval(state.sleepTimerId); state.sleepTimerId = null; }
                 elements.sleepTimerDisplay.textContent = '';
             };
 
