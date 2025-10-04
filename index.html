@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在线音声播放器</title>
+    <style>
+        body { 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+            font-family: sans-serif; 
+            background-color: #f0f0f0; 
+        }
+        audio { 
+            width: 90%; 
+            max-width: 600px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h2>音声在线播放</h2>
+    <audio controls autoplay controlsList="nodownload">
+        <source src="https://raw.kiko-play-niptan.one/media/download/daily/2025-09-19/RJ01439179/トラック6本/01_右耳_KU100.wav" type="audio/wav">
+        您的浏览器不支持在线播放音频。
+    </audio>
+</body>
+</html>
