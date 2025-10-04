@@ -16,6 +16,8 @@
             --accent-secondary-light: #f0fdfa;
             --border-light: #e5e7eb;
             --shadow-light: rgba(0, 0, 0, 0.05);
+            --track-bg-light: #e5e7eb;
+            --thumb-bg-light: #1f2937;
 
             /* Dark Theme */
             --bg-primary-dark: #111827;
@@ -26,6 +28,8 @@
             --accent-secondary-dark: #1e3a37;
             --border-dark: #374151;
             --shadow-dark: rgba(0, 0, 0, 0.2);
+            --track-bg-dark: #374151;
+            --thumb-bg-dark: #f9fafb;
         }
 
         [data-theme="light"] {
@@ -37,6 +41,9 @@
             --accent-secondary: var(--accent-secondary-light);
             --border-color: var(--border-light);
             --shadow-color: var(--shadow-light);
+            --track-bg: var(--track-bg-light);
+            --thumb-bg: var(--thumb-bg-light);
+            color-scheme: light;
         }
 
         [data-theme="dark"] {
@@ -48,11 +55,12 @@
             --accent-secondary: var(--accent-secondary-dark);
             --border-color: var(--border-dark);
             --shadow-color: var(--shadow-dark);
+            --track-bg: var(--track-bg-dark);
+            --thumb-bg: var(--thumb-bg-dark);
+            color-scheme: dark;
         }
         
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             font-family: var(--font-family);
@@ -67,11 +75,18 @@
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
+        .player-wrapper {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
         .player-container {
             width: 100%;
-            max-width: 1000px;
-            aspect-ratio: 16 / 9;
+            max-width: 1200px;
+            aspect-ratio: 10 / 6;
             min-height: 600px;
+            max-height: 90vh;
             display: flex;
             background-color: var(--bg-secondary);
             border-radius: 16px;
@@ -81,7 +96,7 @@
         }
 
         .album-art-section {
-            flex-basis: 40%;
+            flex-basis: 45%;
             padding: 2rem;
             display: flex;
             flex-direction: column;
@@ -89,13 +104,19 @@
             align-items: center;
         }
 
-        #cover-art {
+        .cover-art-wrapper {
             width: 100%;
-            aspect-ratio: 1 / 1;
+            max-width: 560px; /* 限制最大宽度以保持比例 */
+            aspect-ratio: 560 / 420; /* 固定宽高比 */
             border-radius: 12px;
-            object-fit: cover;
+            overflow: hidden;
             box-shadow: 0 8px 20px var(--shadow-color);
             margin-bottom: 1.5rem;
+        }
+        #cover-art {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* 保证图片填满容器且不变形 */
         }
 
         #work-title {
@@ -106,162 +127,136 @@
         }
 
         .controls-and-playlist-section {
-            flex-basis: 60%;
+            flex-basis: 55%;
             display: flex;
             flex-direction: column;
             padding: 2rem;
             border-left: 1px solid var(--border-color);
         }
 
-        .track-info {
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
+        .track-info { text-align: center; margin-bottom: 1.5rem; }
+        #current-track-title { font-size: 1.5rem; font-weight: bold; margin: 0 0 0.5rem 0; min-height: 2.25rem; }
+        #status { color: var(--text-secondary); font-size: 1rem; }
 
-        #current-track-title {
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin: 0 0 0.5rem 0;
-            min-height: 2.25rem;
-        }
+        audio { display: none; } /* 隐藏原生播放器 */
 
-        #status {
-            color: var(--text-secondary);
-            font-size: 1rem;
+        /* 自定义播放器UI */
+        .custom-audio-player { margin-bottom: 1rem; }
+        .progress-bar-container { width: 100%; cursor: pointer; padding: 10px 0; }
+        .progress-bar { height: 6px; background-color: var(--track-bg); border-radius: 3px; position: relative; }
+        .progress-filled { height: 100%; width: 0; background-color: var(--accent-primary); border-radius: 3px; position: relative; }
+        .progress-filled::after {
+            content: '';
+            position: absolute;
+            right: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            background-color: var(--thumb-bg);
+            border-radius: 50%;
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
         }
+        .time-display { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary); margin-top: 5px; }
+        .main-controls { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1rem; }
+        .main-controls button {
+            background: none; border: none; cursor: pointer; color: var(--text-primary); padding: 0.5rem;
+        }
+        .main-controls button svg { width: 24px; height: 24px; }
+        .play-pause-btn svg { width: 40px; height: 40px; }
 
-        audio {
-            width: 100%;
-            margin-bottom: 1rem;
+        .extra-controls {
+            display: flex; justify-content: center; align-items: center; gap: 1rem; margin-bottom: 2rem;
         }
-
-        .custom-controls {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 2rem;
+        .extra-controls button, .extra-controls select {
+            background-color: transparent; border: 1px solid var(--border-color); color: var(--text-secondary);
+            padding: 0.5rem 1rem; border-radius: 99px; cursor: pointer; font-size: 0.9rem;
+            font-family: inherit; transition: all 0.2s ease;
         }
-
-        .custom-controls button, .custom-controls select {
-            background-color: transparent;
-            border: 1px solid var(--border-color);
-            color: var(--text-secondary);
-            padding: 0.5rem 1rem;
-            border-radius: 99px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-family: inherit;
-            transition: all 0.2s ease;
-        }
-        .custom-controls button:hover, .custom-controls select:hover {
-            border-color: var(--accent-primary);
-            color: var(--accent-primary);
-        }
+        .extra-controls button:hover, .extra-controls select:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
         
-        .playlist-container {
-            flex-grow: 1;
-            overflow-y: auto;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-        }
-
-        #playlist {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
+        .playlist-container { flex-grow: 1; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; }
+        #playlist { list-style: none; padding: 0; margin: 0; }
         #playlist li {
-            padding: 1rem 1.5rem;
-            cursor: pointer;
-            border-bottom: 1px solid var(--border-color);
-            transition: background-color 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            color: var(--text-secondary);
+            padding: 1rem 1.5rem; cursor: pointer; border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.2s; display: flex; align-items: center; gap: 1rem; color: var(--text-secondary);
         }
         #playlist li:last-child { border-bottom: none; }
         #playlist li:hover { background-color: var(--bg-primary); }
-        #playlist li.active {
-            background-color: var(--accent-secondary);
-            color: var(--accent-primary);
-            font-weight: 600;
-        }
+        #playlist li.active { background-color: var(--accent-secondary); color: var(--accent-primary); font-weight: 600; }
         .track-index { font-style: italic; }
 
         .theme-toggle {
-            position: fixed;
-            top: 1rem;
-            right: 1rem;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: var(--text-secondary);
+            position: fixed; top: 1rem; right: 1rem; background: var(--bg-secondary);
+            border: 1px solid var(--border-color); border-radius: 50%; width: 40px; height: 40px;
+            cursor: pointer; display: flex; justify-content: center; align-items: center; color: var(--text-secondary);
         }
         .theme-toggle svg { width: 20px; height: 20px; }
         #icon-sun, #icon-moon { display: none; }
         [data-theme="light"] #icon-sun { display: block; }
         [data-theme="dark"] #icon-moon { display: block; }
         
-        /* Responsive Design */
-        @media (max-width: 800px) {
-            .player-container {
-                flex-direction: column;
-                aspect-ratio: initial;
-                min-height: 90vh;
-                height: auto;
-            }
-            .album-art-section {
-                flex-basis: auto;
-                padding: 1.5rem;
-                border-bottom: 1px solid var(--border-color);
-            }
-            .controls-and-playlist-section {
-                border-left: none;
-                padding: 1.5rem;
-            }
-            #cover-art { max-width: 250px; }
+        @media (max-width: 900px) {
+            .player-container { flex-direction: column; aspect-ratio: initial; min-height: 90vh; height: auto; max-height: none; }
+            .album-art-section { flex-basis: auto; padding: 1.5rem; border-bottom: 1px solid var(--border-color); }
+            .controls-and-playlist-section { border-left: none; padding: 1.5rem; }
+            .cover-art-wrapper { max-width: 300px; }
         }
-
     </style>
 </head>
 <body>
-    <div class="player-container">
-        <section class="album-art-section">
-            <img id="cover-art" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="作品封面">
-            <h1 id="work-title">作品标题</h1>
-        </section>
-        <section class="controls-and-playlist-section">
-            <div class="track-info">
-                <h2 id="current-track-title">播放器</h2>
-                <p id="status">正在初始化...</p>
-            </div>
-            <audio id="audio-player" controls controlsList="nodownload"></audio>
-            <div class="custom-controls">
-                <button id="prev-track">上一曲</button>
-                <button id="rewind-10s">« 10s</button>
-                <select id="playback-rate">
-                    <option value="0.75">0.75x</option>
-                    <option value="1" selected>1.0x</option>
-                    <option value="1.25">1.25x</option>
-                    <option value="1.5">1.5x</option>
-                    <option value="2.0">2.0x</option>
-                </select>
-                <button id="forward-10s">10s »</button>
-                <button id="next-track">下一曲</button>
-            </div>
-            <div class="playlist-container">
-                <ol id="playlist"></ol>
-            </div>
-        </section>
+    <div class="player-wrapper">
+        <div class="player-container">
+            <section class="album-art-section">
+                <div class="cover-art-wrapper">
+                    <img id="cover-art" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="作品封面">
+                </div>
+                <h1 id="work-title">作品标题</h1>
+            </section>
+            <section class="controls-and-playlist-section">
+                <div class="track-info">
+                    <h2 id="current-track-title">播放器</h2>
+                    <p id="status">正在初始化...</p>
+                </div>
+                
+                <audio id="audio-player"></audio> <!-- controls removed -->
+
+                <div class="custom-audio-player">
+                    <div class="progress-bar-container" id="progress-bar-container">
+                        <div class="progress-bar">
+                            <div class="progress-filled" id="progress-filled"></div>
+                        </div>
+                    </div>
+                    <div class="time-display">
+                        <span id="current-time">0:00</span>
+                        <span id="total-duration">0:00</span>
+                    </div>
+                    <div class="main-controls">
+                        <button id="prev-track" title="上一曲"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
+                        <button id="play-pause-btn" class="play-pause-btn" title="播放/暂停">
+                            <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                            <svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                        </button>
+                        <button id="next-track" title="下一曲"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+                    </div>
+                </div>
+
+                <div class="extra-controls">
+                    <button id="rewind-10s">« 10s</button>
+                    <select id="playback-rate">
+                        <option value="0.75">0.75x</option>
+                        <option value="1" selected>1.0x</option>
+                        <option value="1.25">1.25x</option>
+                        <option value="1.5">1.5x</option>
+                        <option value="2.0">2.0x</option>
+                    </select>
+                    <button id="forward-10s">10s »</button>
+                </div>
+                <div class="playlist-container">
+                    <ol id="playlist"></ol>
+                </div>
+            </section>
+        </div>
     </div>
 
     <button class="theme-toggle" id="theme-toggle" title="切换主题">
@@ -271,107 +266,118 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // DOM Elements
-            const statusEl = document.getElementById('status');
-            const workTitleEl = document.getElementById('work-title');
-            const coverArtEl = document.getElementById('cover-art');
-            const currentTrackTitleEl = document.getElementById('current-track-title');
-            const audioEl = document.getElementById('audio-player');
-            const playlistEl = document.getElementById('playlist');
-            const prevBtn = document.getElementById('prev-track');
-            const nextBtn = document.getElementById('next-track');
-            const rewindBtn = document.getElementById('rewind-10s');
-            const forwardBtn = document.getElementById('forward-10s');
-            const rateSelector = document.getElementById('playback-rate');
-            const themeToggleBtn = document.getElementById('theme-toggle');
+            const getEl = (id) => document.getElementById(id);
 
+            const statusEl = getEl('status');
+            const workTitleEl = getEl('work-title');
+            const coverArtEl = getEl('cover-art');
+            const currentTrackTitleEl = getEl('current-track-title');
+            const audioEl = getEl('audio-player');
+            const playlistEl = getEl('playlist');
+            const prevBtn = getEl('prev-track');
+            const nextBtn = getEl('next-track');
+            const rewindBtn = getEl('rewind-10s');
+            const forwardBtn = getEl('forward-10s');
+            const rateSelector = getEl('playback-rate');
+            const themeToggleBtn = getEl('theme-toggle');
+            const playPauseBtn = getEl('play-pause-btn');
+            const playIcon = getEl('play-icon');
+            const pauseIcon = getEl('pause-icon');
+            const progressContainer = getEl('progress-bar-container');
+            const progressFilled = getEl('progress-filled');
+            const currentTimeEl = getEl('current-time');
+            const totalDurationEl = getEl('total-duration');
+            
             let tracks = [];
             let currentIndex = -1;
-
+            let isPlaying = false;
+            
             // --- Theme Management ---
-            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             const savedTheme = localStorage.getItem('theme');
+            const applyTheme = (theme) => { document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('theme', theme); };
+            applyTheme(savedTheme || (prefersDark ? 'dark' : 'light'));
+            themeToggleBtn.addEventListener('click', () => applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
 
-            function applyTheme(theme) {
-                document.documentElement.setAttribute('data-theme', theme);
-                localStorage.setItem('theme', theme);
-            }
-
-            if (savedTheme) {
-                applyTheme(savedTheme);
-            } else {
-                applyTheme(prefersDark ? 'dark' : 'light');
-            }
-            
-            themeToggleBtn.addEventListener('click', () => {
-                const currentTheme = document.documentElement.getAttribute('data-theme');
-                applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
-            });
-            
-            // --- Player Logic ---
+            // --- Player Initialization ---
             try {
                 const params = new URLSearchParams(window.location.search);
-                const audioUrls = params.getAll('audio');
-                const audioTitles = params.getAll('title');
-                const workTitle = params.get('workTitle');
-                const coverUrl = params.get('cover');
-
+                const [audioUrls, audioTitles, workTitle, coverUrl] = [params.getAll('audio'), params.getAll('title'), params.get('workTitle'), params.get('cover')];
                 if (workTitle) workTitleEl.textContent = decodeURIComponent(workTitle);
                 if (coverUrl) coverArtEl.src = decodeURIComponent(coverUrl);
-
-                if (audioUrls.length > 0 && audioUrls.length === audioTitles.length) {
-                    tracks = audioUrls.map((url, index) => ({
-                        src: decodeURIComponent(url),
-                        title: decodeURIComponent(audioTitles[index])
-                    }));
+                if (audioUrls.length && audioUrls.length === audioTitles.length) {
+                    tracks = audioUrls.map((url, i) => ({ src: decodeURIComponent(url), title: decodeURIComponent(audioTitles[i]) }));
                     buildPlaylist();
-                    playTrack(0);
-                } else {
-                    setError('未提供有效的音频数据。');
-                }
-            } catch (e) {
-                setError('链接参数解析失败。');
-                console.error('URL parsing error:', e);
-            }
-            
+                    loadTrack(0);
+                } else { setError('未提供有效的音频数据'); }
+            } catch (e) { setError('链接参数解析失败'); console.error(e); }
+
+            // --- Core Functions ---
             function buildPlaylist() {
-                playlistEl.innerHTML = '';
-                tracks.forEach((track, index) => {
-                    const li = document.createElement('li');
-                    li.dataset.index = index;
-                    li.innerHTML = `<span class="track-index">${index + 1}.</span> <span class="track-title">${track.title}</span>`;
-                    li.addEventListener('click', () => playTrack(index));
-                    playlistEl.appendChild(li);
+                playlistEl.innerHTML = tracks.map((track, i) => `<li data-index="${i}"><span class="track-index">${i + 1}.</span><span class="track-title">${track.title}</span></li>`).join('');
+                playlistEl.addEventListener('click', (e) => {
+                    const li = e.target.closest('li');
+                    if (li) playTrack(parseInt(li.dataset.index, 10));
                 });
             }
 
-            function playTrack(index) {
+            function loadTrack(index) {
                 if (index < 0 || index >= tracks.length) return;
                 currentIndex = index;
-                const track = tracks[index];
-                
-                audioEl.src = track.src;
-                currentTrackTitleEl.textContent = track.title;
-                statusEl.textContent = `播放中... (音轨 ${index + 1} / ${tracks.length})`;
-                audioEl.play().catch(e => console.warn("Playback prevented:", e));
-
-                document.querySelectorAll('#playlist li').forEach((li, i) => {
-                    li.classList.toggle('active', i === index);
-                });
+                audioEl.src = tracks[index].src;
+                currentTrackTitleEl.textContent = tracks[index].title;
+                document.querySelectorAll('#playlist li').forEach((li, i) => li.classList.toggle('active', i === index));
             }
-
+            
+            function playTrack(index) { loadTrack(index); audioEl.play(); }
             function playNext() { playTrack((currentIndex + 1) % tracks.length); }
             function playPrev() { playTrack((currentIndex - 1 + tracks.length) % tracks.length); }
-            function setError(message) { statusEl.textContent = message; }
+            
+            function togglePlayPause() {
+                if (isPlaying) audioEl.pause();
+                else audioEl.play();
+            }
+
+            function updateUI() {
+                isPlaying = !audioEl.paused;
+                playIcon.style.display = isPlaying ? 'none' : 'block';
+                pauseIcon.style.display = isPlaying ? 'block' : 'none';
+                statusEl.textContent = isPlaying ? `播放中... (音轨 ${currentIndex + 1}/${tracks.length})` : `已暂停 (音轨 ${currentIndex + 1}/${tracks.length})`;
+            }
+
+            function updateProgress() {
+                const { duration, currentTime } = audioEl;
+                if (!isNaN(duration)) {
+                    progressFilled.style.width = `${(currentTime / duration) * 100}%`;
+                    currentTimeEl.textContent = formatTime(currentTime);
+                    totalDurationEl.textContent = formatTime(duration);
+                }
+            }
+            
+            function setProgress(e) {
+                const width = progressContainer.clientWidth;
+                const clickX = e.offsetX;
+                audioEl.currentTime = (clickX / width) * audioEl.duration;
+            }
+
+            const formatTime = (seconds) => new Date(seconds * 1000).toISOString().substr(14, 5);
+            const setError = (msg) => statusEl.textContent = msg;
 
             // --- Event Listeners ---
+            audioEl.addEventListener('play', updateUI);
+            audioEl.addEventListener('pause', updateUI);
             audioEl.addEventListener('ended', playNext);
-            audioEl.addEventListener('error', () => { statusEl.textContent = `音轨 ${currentIndex + 1} 加载失败`; });
+            audioEl.addEventListener('timeupdate', updateProgress);
+            audioEl.addEventListener('loadedmetadata', updateProgress); // Ensures duration is available
+            audioEl.addEventListener('error', () => setError(`音轨 ${currentIndex + 1} 加载失败`));
+            
+            playPauseBtn.addEventListener('click', togglePlayPause);
             prevBtn.addEventListener('click', playPrev);
             nextBtn.addEventListener('click', playNext);
             rewindBtn.addEventListener('click', () => { audioEl.currentTime = Math.max(0, audioEl.currentTime - 10); });
             forwardBtn.addEventListener('click', () => { audioEl.currentTime += 10; });
             rateSelector.addEventListener('change', (e) => { audioEl.playbackRate = parseFloat(e.target.value); });
+            progressContainer.addEventListener('click', setProgress);
         });
     </script>
 </body>
