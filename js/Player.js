@@ -1,10 +1,7 @@
-// 导入依赖的常量
 import { ICONS } from './constants.js';
 
-// 导出 Player 类
 export class Player {
     constructor() {
-        // ... (Player 类的所有代码，与上一版完全相同)
         this.elements = {};
         this.state = {
             tracks: [], currentIndex: -1, isPlaying: false, isSeeking: false,
@@ -161,8 +158,16 @@ export class Player {
     loadTrack(index, autoPlay = false) {
         if (index < 0 || index >= this.state.tracks.length) return;
         this.state.currentIndex = index;
+        
+        // 优化2：实现标题交叉渐变
+        const titleEl = this.elements.currentTrackTitle;
+        titleEl.classList.add('is-changing');
+        setTimeout(() => {
+            titleEl.textContent = this.state.tracks[index].title;
+            titleEl.classList.remove('is-changing');
+        }, 150);
+
         this.audio.src = this.state.tracks[index].src;
-        this.elements.currentTrackTitle.textContent = this.state.tracks[index].title;
         this._updatePlaylistActive();
         if (autoPlay) {
             if (!this.audioContextInitialized) this._initWebAudio();

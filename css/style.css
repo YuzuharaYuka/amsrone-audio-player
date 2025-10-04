@@ -70,14 +70,34 @@ body {
     }
 }
 
+/* 优化1：定义加载动画 */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .album-art-section {
     flex-basis: 45%; padding: 2rem; display: flex; flex-direction: column;
     justify-content: center; align-items: center; text-align: center;
+    /* 优化1：应用加载动画 */
+    animation: fadeInUp 0.6s ease-out both;
 }
-#rj-code-display { font-size: 1.1rem; color: var(--text-secondary); margin: 0 0 1rem 0; }
 .cover-art-wrapper {
     width: 100%; max-width: 560px; aspect-ratio: 560 / 420; border-radius: 12px;
     overflow: hidden; box-shadow: 0 8px 20px var(--shadow-color); margin-bottom: 1.5rem;
+    /* 优化3：为封面交互添加过渡 */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+/* 优化3：封面悬停效果 */
+.cover-art-wrapper:hover {
+    transform: scale(1.03);
+    box-shadow: 0 12px 28px var(--shadow-color);
 }
 #cover-art { width: 100%; height: 100%; object-fit: cover; }
 #work-title { font-size: 1.25rem; font-weight: 600; margin: 0; }
@@ -85,14 +105,23 @@ body {
 .controls-and-playlist-section {
     flex-basis: 55%; display: flex; flex-direction: column; padding: 2rem;
     border-left: 1px solid var(--border-color);
+    /* 优化1：应用加载动画 (延迟执行) */
+    animation: fadeInUp 0.6s 0.15s ease-out both;
 }
 
 .track-info { text-align: center; margin-bottom: 1rem; }
-#current-track-title { font-size: 1.5rem; font-weight: bold; margin: 0 0 0.5rem 0; min-height: 2.25rem; }
+#current-track-title {
+    font-size: 1.5rem; font-weight: bold; margin: 0 0 0.5rem 0; min-height: 2.25rem;
+    /* 优化2：为标题切换添加过渡 */
+    transition: opacity 0.15s ease-in-out;
+}
+/* 优化2：标题切换时的淡出状态 */
+#current-track-title.is-changing {
+    opacity: 0;
+}
+
 #status { color: var(--text-secondary); font-size: 1rem; }
-
 audio { display: none; }
-
 .custom-audio-player { margin-bottom: 1rem; }
 .progress-bar-container { width: 100%; cursor: pointer; padding: 10px 0; }
 .progress-bar { height: 6px; background-color: var(--track-bg); border-radius: 3px; position: relative; }
@@ -107,9 +136,16 @@ audio { display: none; }
 .main-controls { display: flex; justify-content: space-evenly; align-items: center; margin-top: 1rem; }
 .main-controls button {
     background: none; border: none; cursor: pointer; color: var(--text-primary);
-    padding: 0.5rem; transition: color 0.2s ease, transform 0.1s ease;
+    padding: 0.5rem; 
+    /* 优化4：增强按钮过渡效果 */
+    transition: color 0.2s ease, transform 0.15s ease, filter 0.2s ease;
+    filter: drop-shadow(0 0 0 transparent);
 }
-.main-controls button:hover { color: var(--accent-primary); }
+.main-controls button:hover {
+    color: var(--accent-primary);
+    /* 优化4：添加悬停发光效果 */
+    filter: drop-shadow(0 0 4px var(--accent-primary));
+}
 .main-controls button:active { transform: scale(0.9); }
 .main-controls button svg { width: 24px; height: 24px; vertical-align: middle; }
 .play-pause-btn svg { width: 40px; height: 40px; }
