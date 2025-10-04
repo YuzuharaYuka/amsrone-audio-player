@@ -96,24 +96,26 @@
         }
         .time-display { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary); margin-top: 5px; }
         
-        .main-controls { display: flex; justify-content: space-evenly; align-items: center; margin-top: 1rem; }
+        .main-controls { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; }
         .main-controls button {
             background: none; border: none; cursor: pointer; color: var(--text-primary);
             padding: 0.5rem; transition: color 0.2s ease;
         }
         .main-controls button:hover { color: var(--accent-primary); }
         .main-controls button svg { width: 24px; height: 24px; vertical-align: middle; }
+        .player-center-controls { display: flex; align-items: center; gap: 1rem; }
         .play-pause-btn svg { width: 40px; height: 40px; }
         
         .extra-controls { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-bottom: 2rem; }
-        .extra-controls button, .extra-controls select {
+        .extra-controls select {
             background-color: transparent; border: 1px solid var(--border-color); color: var(--text-secondary);
             padding: 0.5rem 1rem; border-radius: 99px; cursor: pointer; font-size: 0.9rem;
             font-family: inherit; transition: all 0.2s ease;
         }
         .extra-controls select { padding-right: 2rem; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%239ca3af' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.7rem center; background-size: 10px; text-align: center; text-align-last: center; }
-        .extra-controls button:hover, .extra-controls select:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
-        
+        .extra-controls select:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
+        #sleep-timer-display { font-size: 0.9rem; color: var(--accent-primary); min-width: 50px; text-align: center; }
+
         .playlist-container { flex-grow: 1; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; }
         #playlist { list-style: none; padding: 0; margin: 0; }
         #playlist li {
@@ -145,7 +147,7 @@
     <div class="player-wrapper">
         <div class="player-container">
             <section class="album-art-section">
-                <h2 id="rj-code-display">RJ00000000</h2>
+                <h2 id="rj-code-display"></h2>
                 <div class="cover-art-wrapper">
                     <img id="cover-art" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="作品封面">
                 </div>
@@ -165,26 +167,29 @@
                     </div>
                     <div class="time-display"><span id="current-time">0:00</span><span id="total-duration">0:00</span></div>
                     <div class="main-controls">
-                        <button id="play-mode-btn" title="顺序播放"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg></button>
-                        <button id="prev-track" title="上一曲"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
-                        <button id="play-pause-btn" class="play-pause-btn" title="播放/暂停">
-                            <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                            <svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-                        </button>
-                        <button id="next-track" title="下一曲"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+                        <button id="play-mode-btn" title="顺序播放"></button>
+                        <div class="player-center-controls">
+                            <button id="prev-track" title="上一曲"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
+                            <button id="rewind-btn" title="后退 10 秒"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5" /></svg></button>
+                            <button id="play-pause-btn" class="play-pause-btn" title="播放/暂停">
+                                <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                                <svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                            </button>
+                            <button id="forward-btn" title="快进 10 秒"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 4.5l7.5 7.5-7.5 7.5m6-15l7.5 7.5-7.5 7.5" /></svg></button>
+                            <button id="next-track" title="下一曲"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+                        </div>
                         <button id="download-track" title="下载当前音轨"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg></button>
                     </div>
                 </div>
 
                 <div class="extra-controls">
-                    <button id="rewind-10s">« 10s</button>
                     <select id="playback-rate">
                         <option value="0.75">0.75x</option><option value="1" selected>1.0x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="2.0">2.0x</option>
                     </select>
                     <select id="sleep-timer-select">
-                        <option value="0">定时停止</option><option value="15">15分钟后</option><option value="30">30分钟后</option><option value="60">60分钟后</option><option value="90">90分钟后</option>
+                        <option value="0">定时停止</option><option value="15">15分钟后</option><option value="30">30分钟后</option><option value="60">60分钟后</option><option value="90">90分钟后</option><option value="custom">自定义...</option>
                     </select>
-                    <button id="forward-10s">10s »</button>
+                    <span id="sleep-timer-display"></span>
                 </div>
                 <div class="playlist-container">
                     <ol id="playlist"></ol>
@@ -194,7 +199,7 @@
     </div>
 
     <button class="theme-toggle" id="theme-toggle" title="切换主题">
-        <svg id="icon-sun" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
+        <svg id="icon-sun" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
         <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="display:none;"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
     </button>
     
@@ -206,33 +211,31 @@
                 backgroundArt: $('background-art'), status: $('status'), workTitle: $('work-title'),
                 coverArt: $('cover-art'), rjCode: $('rj-code-display'), currentTrackTitle: $('current-track-title'),
                 audio: $('audio-player'), playlist: $('playlist'), prevBtn: $('prev-track'), nextBtn: $('next-track'),
-                rewindBtn: $('rewind-10s'), forwardBtn: $('forward-10s'), rateSelector: $('playback-rate'),
+                rewindBtn: $('rewind-btn'), forwardBtn: $('forward-btn'), rateSelector: $('playback-rate'),
                 themeToggleBtn: $('theme-toggle'), downloadBtn: $('download-track'), playPauseBtn: $('play-pause-btn'),
                 playIcon: $('play-icon'), pauseIcon: $('pause-icon'), progressContainer: $('progress-bar-container'),
                 progressFilled: $('progress-filled'), currentTime: $('current-time'), totalDuration: $('total-duration'),
-                playModeBtn: $('play-mode-btn'), sleepTimerSelect: $('sleep-timer-select'),
+                playModeBtn: $('play-mode-btn'), sleepTimerSelect: $('sleep-timer-select'), sleepTimerDisplay: $('sleep-timer-display'),
             };
 
             // --- State Management ---
             let tracks = [], currentIndex = -1, isPlaying = false, isSeeking = false;
-            let currentPlayMode = 'sequential', sleepTimerId = null;
-            const playModes = ['sequential', 'shuffle', 'repeat', 'stop'];
+            let currentPlayMode = 'sequential', sleepTimer = { id: null, intervalId: null, endTime: 0 };
+            const playModes = ['sequential', 'shuffle', 'repeat-one', 'stop'];
             const playModeIcons = {
-                sequential: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>`,
-                shuffle: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.664 0l3.181-3.183m-3.181-4.991v4.99" /></svg>`,
-                repeat: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.664 0l3.181-3.183m-3.181-4.991v4.99" /></svg>`,
-                stop: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`
+                sequential: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 18h11v-2H4v2zm0-5h16v-2H4v2zm0-7v2h16V6H4z"/></svg>`,
+                shuffle: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>`,
+                'repeat-one': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4zm-4-2V9h-1l-2 1v1h1.5v2.5H13z"/></svg>`,
+                stop: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 18h11v-2H4v2zm0-5h16v-2H4v2zm0-7v2h16V6H4zm18 12H12v-2h10v2z"/></svg>`
             };
-            const playModeTitles = { sequential: '顺序播放', shuffle: '随机播放', repeat: '单曲循环', stop: '播完停止' };
+            const playModeTitles = { sequential: '顺序播放', shuffle: '随机播放', 'repeat-one': '单曲循环', stop: '播完停止' };
             
             // --- Initialization ---
             const init = () => {
-                // Theme
                 const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                 const savedTheme = localStorage.getItem('theme');
                 applyTheme(savedTheme || (prefersDark ? 'dark' : 'light'));
-
-                // URL Params
+                
                 try {
                     const params = new URLSearchParams(window.location.search);
                     const [audioUrls, audioTitles, workTitle, coverUrl, rjCode] = [params.getAll('audio'), params.getAll('title'), params.get('workTitle'), params.get('cover'), params.get('rjCode')];
@@ -253,16 +256,13 @@
                     } else { setError('未提供有效的音频数据'); }
                 } catch (e) { setError('链接参数解析失败'); console.error(e); }
 
-                // Event Listeners
+                updatePlayModeUI();
                 setupEventListeners();
             };
 
             // --- Core Logic ---
             const applyTheme = (theme) => { document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('theme', theme); };
-            const buildPlaylist = () => {
-                elements.playlist.innerHTML = tracks.map((track, i) => `<li data-index="${i}"><span class="track-index">${i + 1}.</span><span class="track-title">${track.title}</span></li>`).join('');
-            };
-
+            const buildPlaylist = () => { elements.playlist.innerHTML = tracks.map((track, i) => `<li data-index="${i}"><span class="track-index">${i + 1}.</span><span class="track-title">${track.title}</span></li>`).join(''); };
             const loadTrack = (index) => {
                 if (index < 0 || index >= tracks.length) return;
                 currentIndex = index;
@@ -270,14 +270,13 @@
                 elements.currentTrackTitle.textContent = tracks[index].title;
                 document.querySelectorAll('#playlist li').forEach((li, i) => li.classList.toggle('active', i === index));
             };
-
             const playTrack = (index) => { loadTrack(index); elements.audio.play(); };
 
             const handleTrackEnd = () => {
                 switch (currentPlayMode) {
                     case 'sequential': playTrack((currentIndex + 1) % tracks.length); break;
                     case 'shuffle': playTrack(getRandomTrackIndex()); break;
-                    case 'repeat': elements.audio.play(); break;
+                    case 'repeat-one': elements.audio.play(); break;
                     case 'stop': isPlaying = false; updateUI(); break;
                 }
             };
@@ -307,19 +306,17 @@
                 elements.downloadBtn.addEventListener('click', downloadCurrentTrack);
                 elements.themeToggleBtn.addEventListener('click', () => applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
                 elements.playModeBtn.addEventListener('click', cyclePlayMode);
-                elements.sleepTimerSelect.addEventListener('change', setSleepTimer);
+                elements.sleepTimerSelect.addEventListener('change', handleSleepTimerChange);
 
                 elements.playlist.addEventListener('click', (e) => {
                     const li = e.target.closest('li');
                     if (li) playTrack(parseInt(li.dataset.index, 10));
                 });
 
-                // Progress Bar Seeking
                 elements.progressContainer.addEventListener('mousedown', (e) => { isSeeking = true; handleProgressSeek(e); });
                 window.addEventListener('mousemove', (e) => { if (isSeeking) { handleProgressSeek(e); updateProgress(); } });
                 window.addEventListener('mouseup', () => { if (isSeeking) isSeeking = false; });
                 
-                // Keyboard controls
                 window.addEventListener('keydown', (e) => {
                     if (['INPUT', 'SELECT'].includes(document.activeElement.tagName)) return;
                     if (e.key === ' ') { e.preventDefault(); elements.playPauseBtn.click(); }
@@ -336,6 +333,7 @@
             };
 
             const updateProgress = () => {
+                if (isSeeking) return;
                 const { duration, currentTime } = elements.audio;
                 if (!isNaN(duration)) {
                     elements.progressFilled.style.width = `${(currentTime / duration) * 100}%`;
@@ -348,7 +346,7 @@
                 const rect = elements.progressContainer.getBoundingClientRect();
                 const clickX = e.clientX - rect.left;
                 const width = rect.width;
-                const newTime = (clickX / width) * elements.audio.duration;
+                const newTime = Math.max(0, Math.min(width, clickX)) / width * elements.audio.duration;
                 if (!isNaN(newTime)) elements.audio.currentTime = newTime;
             };
 
@@ -363,25 +361,61 @@
             const cyclePlayMode = () => {
                 const currentModeIndex = playModes.indexOf(currentPlayMode);
                 currentPlayMode = playModes[(currentModeIndex + 1) % playModes.length];
-                elements.playModeBtn.innerHTML = playModeIcons[currentPlayMode];
-                elements.playModeBtn.title = playModeTitles[currentPlayMode];
+                updatePlayModeUI();
             };
 
-            const setSleepTimer = (e) => {
-                if (sleepTimerId) { clearTimeout(sleepTimerId); sleepTimerId = null; }
-                const minutes = parseInt(e.target.value, 10);
+            const updatePlayModeUI = () => {
+                elements.playModeBtn.innerHTML = playModeIcons[currentPlayMode];
+                elements.playModeBtn.title = playModeTitles[currentPlayMode];
+            }
+
+            const handleSleepTimerChange = (e) => {
+                const value = e.target.value;
+                if (value === 'custom') {
+                    const minutes = prompt('请输入您想在多少分钟后停止播放？', '30');
+                    if (minutes !== null && !isNaN(parseInt(minutes)) && parseInt(minutes) > 0) {
+                        setSleepTimer(parseInt(minutes));
+                    } else {
+                        elements.sleepTimerSelect.value = '0';
+                    }
+                } else {
+                    setSleepTimer(parseInt(value, 10));
+                }
+            };
+
+            const setSleepTimer = (minutes) => {
+                clearTimeout(sleepTimer.id);
+                clearInterval(sleepTimer.intervalId);
                 if (minutes > 0) {
-                    sleepTimerId = setTimeout(() => {
+                    sleepTimer.endTime = Date.now() + minutes * 60 * 1000;
+                    sleepTimer.id = setTimeout(() => {
                         elements.audio.pause();
                         elements.sleepTimerSelect.value = "0";
+                        clearInterval(sleepTimer.intervalId);
+                        elements.sleepTimerDisplay.textContent = "";
                     }, minutes * 60 * 1000);
+                    sleepTimer.intervalId = setInterval(updateSleepTimerDisplay, 1000);
+                    updateSleepTimerDisplay();
+                } else {
+                    elements.sleepTimerDisplay.textContent = "";
+                }
+            };
+
+            const updateSleepTimerDisplay = () => {
+                const remaining = Math.round((sleepTimer.endTime - Date.now()) / 1000);
+                if (remaining <= 0) {
+                    elements.sleepTimerDisplay.textContent = "";
+                    clearInterval(sleepTimer.intervalId);
+                } else {
+                    const mins = Math.floor(remaining / 60);
+                    const secs = remaining % 60;
+                    elements.sleepTimerDisplay.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
                 }
             };
             
             const formatTime = (seconds) => isNaN(seconds) ? '0:00' : new Date(seconds * 1000).toISOString().substr(14, 5);
             const setError = (msg) => elements.status.textContent = msg;
 
-            // --- Start ---
             init();
         });
     </script>
