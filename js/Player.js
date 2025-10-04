@@ -167,18 +167,24 @@ export class Player {
             URL.revokeObjectURL(this.state.currentObjectUrl);
             this.state.currentObjectUrl = null;
         }
+
+        // --- 修改开始：修复缓冲条显示问题 ---
         if (this.state.trackCache.has(index)) {
             const blob = this.state.trackCache.get(index);
             const objectUrl = URL.createObjectURL(blob);
             this.state.currentObjectUrl = objectUrl;
             this.audio.src = objectUrl;
-            // 新增: 调试信息
+            // 手动将缓冲条设置为100%，因为 Blob URL 不会触发 progress 事件
+            this.elements.progressBuffered.style.width = '100%'; 
             console.log(`Track ${index+1} loaded from cache.`);
         } else {
             this.audio.src = this.state.tracks[index].src;
-            // 新增: 调试信息
+            // 从网络加载时，重置缓冲条
+            this.elements.progressBuffered.style.width = '0%';
             console.log(`Track ${index+1} loaded from network.`);
         }
+        // --- 修改结束 ---
+
         this._updatePlaylistActive();
         if (autoPlay) {
             if (!this.audioContextInitialized) this._initWebAudio();
@@ -237,8 +243,6 @@ export class Player {
             const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
             const bufferedPercent = (bufferedEnd / audio.duration) * 100;
             this.elements.progressBuffered.style.width = `${bufferedPercent}%`;
-        } else {
-            this.elements.progressBuffered.style.width = '0%';
         }
     }
 
