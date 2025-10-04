@@ -261,10 +261,10 @@
             const init = () => {
                 applyTheme(localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
                 
-                // [已重构] URL参数解析逻辑
+                // [已重构] URL参数解析逻辑 (从Hash读取)
                 try {
-                    const params = new URLSearchParams(window.location.search);
-                    const payload = params.get('p');
+                    // **核心修改：从 location.hash 读取数据**
+                    const payload = window.location.hash.substring(1); // 获取'#'后面的所有内容
 
                     if (payload) {
                         // 1. Base64解码
