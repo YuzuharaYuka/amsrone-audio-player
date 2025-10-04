@@ -48,6 +48,20 @@ export class Player {
         };
     }
 
+    // --- V9 优化：重写 URL 解析逻辑 ---
+    _reconstructUrl(data) {
+        if (typeof data === 'string') {
+            return data;
+        }
+        if (Array.isArray(data)) {
+            return data.map(part => this._reconstructUrl(part)).join('');
+        }
+        if (URL_DICTIONARY[data]) {
+            return URL_DICTIONARY[data];
+        }
+        return '';
+    }
+
     _parseDataFromURL() {
          try {
             const params = new URLSearchParams(window.location.search);
@@ -58,9 +72,8 @@ export class Player {
                 const jsonString = pako.inflate(compressed, { to: 'string' });
                 const data = JSON.parse(jsonString);
 
-                // --- V8 Payload Decoding ---
-                const baseUrlKey = data.b || '';
-                const baseUrl = URL_DICTIONARY[baseUrlKey] || baseUrlKey;
+                // --- V9 Payload Decoding ---
+                const baseUrl = this._reconstructUrl(data.b || '');
 
                 this._updateWorkInfo(data);
                 
@@ -80,16 +93,9 @@ export class Player {
     }
 
     _updateWorkInfo(data) {
-        // --- V8 Payload Decoding ---
+        // --- V9 Payload Decoding ---
         if (data.c) {
-            let fullCoverUrl = '';
-            if (Array.isArray(data.c)) { // 字典格式 [key, path]
-                const coverKey = data.c[0];
-                const coverPath = data.c[1];
-                fullCoverUrl = (URL_DICTIONARY[coverKey] || '') + coverPath;
-            } else { // 完整 URL
-                fullCoverUrl = data.c;
-            }
+            const fullCoverUrl = this._reconstructUrl(data.c);
             this.elements.coverArt.src = fullCoverUrl;
             this.elements.backgroundArt.style.backgroundImage = `url(${fullCoverUrl})`;
             this.elements.backgroundArt.style.opacity = '1';
@@ -99,13 +105,12 @@ export class Player {
             document.title = `${data.w} | ASMR ONE Player`;
         }
         if (data.r) {
-            // 36进制解码
             const rjNum = parseInt(data.r, 36);
             this.elements.rjCode.textContent = 'RJ' + String(rjNum).padStart(8, '0');
         }
     }
     
-    // ( ... 其他所有方法保持不变 ... )
+    // ( ... 其余所有方法保持不变 ... )
     _bindEventListeners() {
         this.audio.addEventListener('play', () => {
             this._updatePlayPauseUI(true);

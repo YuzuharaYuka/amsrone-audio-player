@@ -1,11 +1,16 @@
+// --- V9 Payload 新增: 分段式 URL 字典 ---
+// 这份字典必须与插件后端的字典完全一致
 export const URL_DICTIONARY = {
-  // c0-c9: Cover prefixes
-  'c0': 'https://api.asmr.one/api/cover/',
-  'c1': 'https://api.asmr-100.com/api/cover/',
-  'c2': 'https://api.asmr-200.com/api/cover/',
-  'c3': 'https://api.asmr-300.com/api/cover/',
-  // a0-a9: Audio/Download prefixes
-  'a0': 'https://raw.kiko-play-niptan.one/media/download/',
+  // d0-d9: Domains
+  'd0': 'https://api.asmr-200.com/api/',
+  'd1': 'https://raw.kiko-play-niptan.one/',
+  'd2': 'https://api.asmr.one/api/',
+  'd3': 'https://api.asmr-100.com/api/',
+  'd4': 'https://api.asmr-300.com/api/',
+  // p0-p9: Common Paths
+  'p0': 'cover/',
+  'p1': 'media/download/',
+  'p2': 'media/stream/',
 };
 
 export const ICONS = {
