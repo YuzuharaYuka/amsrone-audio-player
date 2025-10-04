@@ -9,26 +9,26 @@
             --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
             /* Light Theme */
             --bg-primary-light: #f5f7fa;
-            --bg-secondary-light: #ffffff;
+            --bg-secondary-light: rgba(255, 255, 255, 0.8);
             --text-primary-light: #1f2937;
             --text-secondary-light: #6b7280;
-            --accent-primary-light: #2dd4bf;
+            --accent-primary-light: #0d9488;
             --accent-secondary-light: #f0fdfa;
-            --border-light: #e5e7eb;
+            --border-light: rgba(0, 0, 0, 0.1);
             --shadow-light: rgba(0, 0, 0, 0.05);
             --track-bg-light: #e5e7eb;
             --thumb-bg-light: #1f2937;
 
             /* Dark Theme */
             --bg-primary-dark: #111827;
-            --bg-secondary-dark: #1f2937;
+            --bg-secondary-dark: rgba(31, 41, 55, 0.8);
             --text-primary-dark: #f9fafb;
             --text-secondary-dark: #9ca3af;
             --accent-primary-dark: #2dd4bf;
             --accent-secondary-dark: #1e3a37;
-            --border-dark: #374151;
+            --border-dark: rgba(255, 255, 255, 0.1);
             --shadow-dark: rgba(0, 0, 0, 0.2);
-            --track-bg-dark: #374151;
+            --track-bg-dark: #4b5563;
             --thumb-bg-dark: #f9fafb;
         }
 
@@ -73,6 +73,19 @@
             min-height: 100vh;
             padding: 1rem;
             transition: background-color 0.3s ease, color 0.3s ease;
+            overflow: hidden;
+        }
+
+        #background-art {
+            position: fixed;
+            top: -5%; left: -5%;
+            width: 110%; height: 110%;
+            background-size: cover;
+            background-position: center;
+            filter: blur(24px) brightness(0.8);
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.8s ease-in-out;
         }
 
         .player-wrapper {
@@ -89,7 +102,10 @@
             max-height: 90vh;
             display: flex;
             background-color: var(--bg-secondary);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border-radius: 16px;
+            border: 1px solid var(--border-color);
             box-shadow: 0 10px 25px -5px var(--shadow-color), 0 8px 10px -6px var(--shadow-color);
             overflow: hidden;
             transition: background-color 0.3s ease;
@@ -106,25 +122,15 @@
 
         .cover-art-wrapper {
             width: 100%;
-            max-width: 560px; /* 限制最大宽度以保持比例 */
-            aspect-ratio: 560 / 420; /* 固定宽高比 */
+            max-width: 560px;
+            aspect-ratio: 560 / 420;
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 8px 20px var(--shadow-color);
             margin-bottom: 1.5rem;
         }
-        #cover-art {
-            width: 100%;
-            height: 100%;
-            object-fit: cover; /* 保证图片填满容器且不变形 */
-        }
-
-        #work-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            text-align: center;
-            margin: 0;
-        }
+        #cover-art { width: 100%; height: 100%; object-fit: cover; }
+        #work-title { font-size: 1.25rem; font-weight: 600; text-align: center; margin: 0; }
 
         .controls-and-playlist-section {
             flex-basis: 55%;
@@ -134,45 +140,38 @@
             border-left: 1px solid var(--border-color);
         }
 
-        .track-info { text-align: center; margin-bottom: 1.5rem; }
+        .track-info { text-align: center; margin-bottom: 1rem; }
         #current-track-title { font-size: 1.5rem; font-weight: bold; margin: 0 0 0.5rem 0; min-height: 2.25rem; }
         #status { color: var(--text-secondary); font-size: 1rem; }
 
-        audio { display: none; } /* 隐藏原生播放器 */
+        audio { display: none; }
 
-        /* 自定义播放器UI */
         .custom-audio-player { margin-bottom: 1rem; }
         .progress-bar-container { width: 100%; cursor: pointer; padding: 10px 0; }
         .progress-bar { height: 6px; background-color: var(--track-bg); border-radius: 3px; position: relative; }
         .progress-filled { height: 100%; width: 0; background-color: var(--accent-primary); border-radius: 3px; position: relative; }
         .progress-filled::after {
-            content: '';
-            position: absolute;
-            right: -6px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 12px;
-            height: 12px;
-            background-color: var(--thumb-bg);
-            border-radius: 50%;
-            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+            content: ''; position: absolute; right: -6px; top: 50%;
+            transform: translateY(-50%); width: 12px; height: 12px;
+            background-color: var(--thumb-bg); border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.3);
         }
         .time-display { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary); margin-top: 5px; }
         .main-controls { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1rem; }
         .main-controls button {
             background: none; border: none; cursor: pointer; color: var(--text-primary); padding: 0.5rem;
+            transition: color 0.2s ease;
         }
-        .main-controls button svg { width: 24px; height: 24px; }
+        .main-controls button:hover { color: var(--accent-primary); }
+        .main-controls button svg { width: 24px; height: 24px; vertical-align: middle; }
         .play-pause-btn svg { width: 40px; height: 40px; }
 
-        .extra-controls {
-            display: flex; justify-content: center; align-items: center; gap: 1rem; margin-bottom: 2rem;
-        }
+        .extra-controls { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-bottom: 2rem; }
         .extra-controls button, .extra-controls select {
             background-color: transparent; border: 1px solid var(--border-color); color: var(--text-secondary);
             padding: 0.5rem 1rem; border-radius: 99px; cursor: pointer; font-size: 0.9rem;
-            font-family: inherit; transition: all 0.2s ease;
+            font-family: inherit; transition: all 0.2s ease; text-align: center;
         }
+        .extra-controls select { padding-right: 2rem; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%239ca3af' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.7rem center; background-size: 10px; }
         .extra-controls button:hover, .extra-controls select:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
         
         .playlist-container { flex-grow: 1; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; }
@@ -189,12 +188,8 @@
         .theme-toggle {
             position: fixed; top: 1rem; right: 1rem; background: var(--bg-secondary);
             border: 1px solid var(--border-color); border-radius: 50%; width: 40px; height: 40px;
-            cursor: pointer; display: flex; justify-content: center; align-items: center; color: var(--text-secondary);
+            cursor: pointer; display: flex; justify-content: center; align-items: center; color: var(--text-secondary); z-index: 10;
         }
-        .theme-toggle svg { width: 20px; height: 20px; }
-        #icon-sun, #icon-moon { display: none; }
-        [data-theme="light"] #icon-sun { display: block; }
-        [data-theme="dark"] #icon-moon { display: block; }
         
         @media (max-width: 900px) {
             .player-container { flex-direction: column; aspect-ratio: initial; min-height: 90vh; height: auto; max-height: none; }
@@ -205,6 +200,8 @@
     </style>
 </head>
 <body>
+    <div id="background-art"></div>
+
     <div class="player-wrapper">
         <div class="player-container">
             <section class="album-art-section">
@@ -219,18 +216,13 @@
                     <p id="status">正在初始化...</p>
                 </div>
                 
-                <audio id="audio-player"></audio> <!-- controls removed -->
+                <audio id="audio-player"></audio>
 
                 <div class="custom-audio-player">
                     <div class="progress-bar-container" id="progress-bar-container">
-                        <div class="progress-bar">
-                            <div class="progress-filled" id="progress-filled"></div>
-                        </div>
+                        <div class="progress-bar"><div class="progress-filled" id="progress-filled"></div></div>
                     </div>
-                    <div class="time-display">
-                        <span id="current-time">0:00</span>
-                        <span id="total-duration">0:00</span>
-                    </div>
+                    <div class="time-display"><span id="current-time">0:00</span><span id="total-duration">0:00</span></div>
                     <div class="main-controls">
                         <button id="prev-track" title="上一曲"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
                         <button id="play-pause-btn" class="play-pause-btn" title="播放/暂停">
@@ -238,17 +230,14 @@
                             <svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                         </button>
                         <button id="next-track" title="下一曲"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+                        <button id="download-track" title="下载当前音轨"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M5 20h14v-2H5v2zm14-9h-4V3H9v8H5l7 7 7-7z"/></svg></button>
                     </div>
                 </div>
 
                 <div class="extra-controls">
                     <button id="rewind-10s">« 10s</button>
                     <select id="playback-rate">
-                        <option value="0.75">0.75x</option>
-                        <option value="1" selected>1.0x</option>
-                        <option value="1.25">1.25x</option>
-                        <option value="1.5">1.5x</option>
-                        <option value="2.0">2.0x</option>
+                        <option value="0.75">0.75x</option><option value="1" selected>1.0x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="2.0">2.0x</option>
                     </select>
                     <button id="forward-10s">10s »</button>
                 </div>
@@ -260,37 +249,26 @@
     </div>
 
     <button class="theme-toggle" id="theme-toggle" title="切换主题">
+        <!-- Icons from heroicons.com -->
         <svg id="icon-sun" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
-        <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
+        <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="display:none;"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
     </button>
     
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const getEl = (id) => document.getElementById(id);
 
-            const statusEl = getEl('status');
-            const workTitleEl = getEl('work-title');
-            const coverArtEl = getEl('cover-art');
-            const currentTrackTitleEl = getEl('current-track-title');
-            const audioEl = getEl('audio-player');
-            const playlistEl = getEl('playlist');
-            const prevBtn = getEl('prev-track');
-            const nextBtn = getEl('next-track');
-            const rewindBtn = getEl('rewind-10s');
-            const forwardBtn = getEl('forward-10s');
-            const rateSelector = getEl('playback-rate');
-            const themeToggleBtn = getEl('theme-toggle');
-            const playPauseBtn = getEl('play-pause-btn');
-            const playIcon = getEl('play-icon');
-            const pauseIcon = getEl('pause-icon');
-            const progressContainer = getEl('progress-bar-container');
-            const progressFilled = getEl('progress-filled');
-            const currentTimeEl = getEl('current-time');
-            const totalDurationEl = getEl('total-duration');
+            // DOM Elements
+            const backgroundArt = getEl('background-art');
+            const statusEl = getEl('status'), workTitleEl = getEl('work-title'), coverArtEl = getEl('cover-art');
+            const currentTrackTitleEl = getEl('current-track-title'), audioEl = getEl('audio-player'), playlistEl = getEl('playlist');
+            const prevBtn = getEl('prev-track'), nextBtn = getEl('next-track'), rewindBtn = getEl('rewind-10s'), forwardBtn = getEl('forward-10s');
+            const rateSelector = getEl('playback-rate'), themeToggleBtn = getEl('theme-toggle'), downloadBtn = getEl('download-track');
+            const playPauseBtn = getEl('play-pause-btn'), playIcon = getEl('play-icon'), pauseIcon = getEl('pause-icon');
+            const progressContainer = getEl('progress-bar-container'), progressFilled = getEl('progress-filled');
+            const currentTimeEl = getEl('current-time'), totalDurationEl = getEl('total-duration');
             
-            let tracks = [];
-            let currentIndex = -1;
-            let isPlaying = false;
+            let tracks = [], currentIndex = -1, isPlaying = false, isSeeking = false;
             
             // --- Theme Management ---
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -303,8 +281,15 @@
             try {
                 const params = new URLSearchParams(window.location.search);
                 const [audioUrls, audioTitles, workTitle, coverUrl] = [params.getAll('audio'), params.getAll('title'), params.get('workTitle'), params.get('cover')];
+                
+                if (coverUrl) {
+                    const decodedCoverUrl = decodeURIComponent(coverUrl);
+                    coverArtEl.src = decodedCoverUrl;
+                    backgroundArt.style.backgroundImage = `url(${decodedCoverUrl})`;
+                    backgroundArt.style.opacity = '1';
+                }
                 if (workTitle) workTitleEl.textContent = decodeURIComponent(workTitle);
-                if (coverUrl) coverArtEl.src = decodeURIComponent(coverUrl);
+
                 if (audioUrls.length && audioUrls.length === audioTitles.length) {
                     tracks = audioUrls.map((url, i) => ({ src: decodeURIComponent(url), title: decodeURIComponent(audioTitles[i]) }));
                     buildPlaylist();
@@ -332,11 +317,7 @@
             function playTrack(index) { loadTrack(index); audioEl.play(); }
             function playNext() { playTrack((currentIndex + 1) % tracks.length); }
             function playPrev() { playTrack((currentIndex - 1 + tracks.length) % tracks.length); }
-            
-            function togglePlayPause() {
-                if (isPlaying) audioEl.pause();
-                else audioEl.play();
-            }
+            function togglePlayPause() { isPlaying ? audioEl.pause() : audioEl.play(); }
 
             function updateUI() {
                 isPlaying = !audioEl.paused;
@@ -346,6 +327,7 @@
             }
 
             function updateProgress() {
+                if (isSeeking) return;
                 const { duration, currentTime } = audioEl;
                 if (!isNaN(duration)) {
                     progressFilled.style.width = `${(currentTime / duration) * 100}%`;
@@ -354,13 +336,26 @@
                 }
             }
             
-            function setProgress(e) {
-                const width = progressContainer.clientWidth;
-                const clickX = e.offsetX;
-                audioEl.currentTime = (clickX / width) * audioEl.duration;
+            function handleProgressSeek(e) {
+                const rect = progressContainer.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const width = rect.width;
+                const duration = audioEl.duration;
+                audioEl.currentTime = (clickX / width) * duration;
             }
 
-            const formatTime = (seconds) => new Date(seconds * 1000).toISOString().substr(14, 5);
+            function downloadCurrentTrack() {
+                if (currentIndex === -1) return;
+                const track = tracks[currentIndex];
+                const a = document.createElement('a');
+                a.href = track.src;
+                a.download = track.title || 'audio.wav';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+
+            const formatTime = (seconds) => isNaN(seconds) ? '0:00' : new Date(seconds * 1000).toISOString().substr(14, 5);
             const setError = (msg) => statusEl.textContent = msg;
 
             // --- Event Listeners ---
@@ -368,7 +363,7 @@
             audioEl.addEventListener('pause', updateUI);
             audioEl.addEventListener('ended', playNext);
             audioEl.addEventListener('timeupdate', updateProgress);
-            audioEl.addEventListener('loadedmetadata', updateProgress); // Ensures duration is available
+            audioEl.addEventListener('loadedmetadata', updateProgress);
             audioEl.addEventListener('error', () => setError(`音轨 ${currentIndex + 1} 加载失败`));
             
             playPauseBtn.addEventListener('click', togglePlayPause);
@@ -377,7 +372,11 @@
             rewindBtn.addEventListener('click', () => { audioEl.currentTime = Math.max(0, audioEl.currentTime - 10); });
             forwardBtn.addEventListener('click', () => { audioEl.currentTime += 10; });
             rateSelector.addEventListener('change', (e) => { audioEl.playbackRate = parseFloat(e.target.value); });
-            progressContainer.addEventListener('click', setProgress);
+            downloadBtn.addEventListener('click', downloadCurrentTrack);
+
+            progressContainer.addEventListener('mousedown', (e) => { isSeeking = true; handleProgressSeek(e); });
+            window.addEventListener('mousemove', (e) => { if (isSeeking) handleProgressSeek(e); });
+            window.addEventListener('mouseup', () => { isSeeking = false; });
         });
     </script>
 </body>
