@@ -54,7 +54,6 @@
             font-family: var(--font-family); margin: 0; background-color: var(--bg-primary);
             color: var(--text-primary); display: flex; justify-content: center; align-items: center;
             min-height: 100vh; padding: 1rem; transition: background-color 0.3s ease;
-            /* 问题4 修复：移除 overflow: hidden */
         }
 
         #background-art {
@@ -68,13 +67,11 @@
         .player-container {
             width: 100%; max-width: 1200px; aspect-ratio: 10 / 6.5; min-height: 600px;
             max-height: 90vh; display: flex; 
-            /* 问题3 修复：提供备用背景色 */
             background-color: var(--bg-secondary-glass);
             border-radius: 16px; border: 1px solid var(--border-color);
             box-shadow: 0 10px 25px -5px var(--shadow-color);
             overflow: hidden; transition: background-color 0.3s ease;
         }
-        /* 问题3 修复：使用 @supports 实现渐进增强 */
         @supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
             .player-container {
                 backdrop-filter: blur(20px);
@@ -162,7 +159,6 @@
             color: var(--text-secondary); z-index: 10;
         }
 
-        /* 问题2 新增：模态框样式 */
         .modal-overlay {
             position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.6);
             display: flex; justify-content: center; align-items: center; z-index: 1000;
@@ -241,7 +237,8 @@
                 <div class="extra-controls">
                     <div class="volume-control">
                         <button id="volume-btn" title="静音"></button>
-                        <input type="range" id="volume-slider" class="volume-slider" min="0" max="100" value="100">
+                        <!-- 问题3 修改：将max值改为150 -->
+                        <input type="range" id="volume-slider" class="volume-slider" min="0" max="150" value="100">
                     </div>
                     <div class="secondary-controls">
                         <select id="playback-rate">
@@ -265,7 +262,6 @@
         <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="display:none;"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
     </button>
     
-    <!-- 问题2 新增：自定义睡眠定时器模态框 -->
     <div id="custom-timer-modal" class="modal-overlay">
       <div class="modal-content">
         <h3>设置定时停止</h3>
@@ -280,8 +276,9 @@
     
     <script>
         const ICONS = {
-            rewind: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M11 18V6l-8.5 6 8.5 6zm-2-6l6-4.5v9l-6-4.5z"/></svg>`,
-            forward: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 18l8.5-6L4 6v12zm9-12v9l6-4.5-6-4.5z"/></svg>`,
+            // 问题1 修复：替换为更合适的快进/快退图标
+            rewind: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 4.5v15l-8-7.5 8-7.5zm-1 2.69L7.44 12l4.06 4.81V7.19zM20.5 4.5v15l-8-7.5 8-7.5zm-1 2.69L15.44 12l4.06 4.81V7.19z"/></svg>`,
+            forward: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 19.5v-15l8 7.5-8 7.5zm1-2.69L8.56 12 5 7.19v9.62zM12 19.5v-15l8 7.5-8 7.5zm1-2.69L16.56 12 13 7.19v9.62z"/></svg>`,
             prev: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>`,
             next: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>`,
             download: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>`,
@@ -307,6 +304,12 @@
                     playMode: 'sequential', errorTracks: new Set()
                 };
                 this.PLAY_MODES = ['sequential', 'repeat_list', 'repeat_one', 'shuffle'];
+                
+                // 问题3 新增：Web Audio API 相关属性
+                this.audioContext = null;
+                this.gainNode = null;
+                this.audioSource = null;
+                this.audioContextInitialized = false;
 
                 this._cacheDOMElements();
                 this.audio = this.elements.audio;
@@ -334,11 +337,8 @@
                     progressFilled: $('progress-filled'), currentTime: $('current-time'), totalDuration: $('total-duration'),
                     playModeBtn: $('play-mode-btn'), sleepTimerSelect: $('sleep-timer-select'), sleepTimerDisplay: $('sleep-timer-display'),
                     volumeBtn: $('volume-btn'), volumeSlider: $('volume-slider'),
-                    // 新增：模态框元素
-                    customTimerModal: $('custom-timer-modal'),
-                    customTimerInput: $('custom-timer-input'),
-                    customTimerSetBtn: $('custom-timer-set'),
-                    customTimerCancelBtn: $('custom-timer-cancel'),
+                    customTimerModal: $('custom-timer-modal'), customTimerInput: $('custom-timer-input'),
+                    customTimerSetBtn: $('custom-timer-set'), customTimerCancelBtn: $('custom-timer-cancel'),
                 };
             }
 
@@ -365,16 +365,13 @@
             }
 
             _bindEventListeners() {
-                // Audio events
                 this.audio.addEventListener('play', () => this._updatePlayPauseUI(true));
                 this.audio.addEventListener('pause', () => this._updatePlayPauseUI(false));
                 this.audio.addEventListener('ended', this._handleTrackEnd);
                 this.audio.addEventListener('timeupdate', this._updateProgress);
                 this.audio.addEventListener('loadedmetadata', this._updateProgress);
-                this.audio.addEventListener('volumechange', this._updateVolumeUI);
                 this.audio.addEventListener('error', this._handleAudioError);
                 
-                // Control events
                 this.elements.playPauseBtn.addEventListener('click', this.togglePlayPause);
                 this.elements.prevBtn.addEventListener('click', this.prevTrack);
                 this.elements.nextBtn.addEventListener('click', this.nextTrack);
@@ -385,19 +382,16 @@
                 this.elements.themeToggleBtn.addEventListener('click', () => this._applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
                 this.elements.playModeBtn.addEventListener('click', this._cyclePlayMode);
                 this.elements.sleepTimerSelect.addEventListener('change', this._handleSleepTimerChange);
+                
+                // 问题3 修改：音量控制事件现在由新方法处理
                 this.elements.volumeBtn.addEventListener('click', this._toggleMute);
-                this.elements.volumeSlider.addEventListener('input', (e) => this.audio.volume = e.target.value / 100);
+                this.elements.volumeSlider.addEventListener('input', (e) => this._setVolume(e.target.value));
 
-                // Playlist and Progress bar
                 this.elements.playlist.addEventListener('click', this._handlePlaylistClick);
                 this.elements.progressContainer.addEventListener('mousedown', this._startSeek);
                 window.addEventListener('mousemove', this._seeking);
                 window.addEventListener('mouseup', this._endSeek);
-
-                // Keyboard shortcuts
                 window.addEventListener('keydown', this._handleKeyDown);
-
-                // 新增：模态框事件
                 this.elements.customTimerSetBtn.addEventListener('click', this._handleCustomTimerSet);
                 this.elements.customTimerCancelBtn.addEventListener('click', this._hideCustomTimerModal);
             }
@@ -411,7 +405,13 @@
                 this._updatePlaylistActive();
                 if (autoPlay) this.audio.play();
             }
-            togglePlayPause = () => { this.state.isPlaying ? this.audio.pause() : this.audio.play(); }
+            togglePlayPause = () => {
+                // 问题3 新增：首次播放时初始化Web Audio
+                if (!this.audioContextInitialized) this._initWebAudio();
+                if (this.audioContext.state === 'suspended') this.audioContext.resume();
+                
+                this.state.isPlaying ? this.audio.pause() : this.audio.play();
+            }
             nextTrack = () => { this.loadTrack((this.state.currentIndex + 1) % this.state.tracks.length, this.state.isPlaying); }
             prevTrack = () => { this.loadTrack((this.state.currentIndex - 1 + this.state.tracks.length) % this.state.tracks.length, this.state.isPlaying); }
             seek = (delta) => { this.audio.currentTime = Math.max(0, this.audio.currentTime + delta); }
@@ -442,7 +442,6 @@
                 }
                 if (data.w) {
                     this.elements.workTitle.textContent = data.w;
-                    // 问题1 修复：动态更新页面标题
                     document.title = `${data.w} | ASMR ONE Player`;
                 }
                 if (data.r) this.elements.rjCode.textContent = data.r;
@@ -462,7 +461,7 @@
                 this.elements.status.textContent = this.state.isPlaying ? `播放中... ${statusText}` : `已暂停 ${statusText}`;
             }
             _updateProgress = () => {
-                if (this.state.isSeeking) return;
+                // 问题2 修复：移除 isSeeking 的判断，让进度条实时更新
                 const { duration, currentTime } = this.audio;
                 if (!isNaN(duration)) {
                     this.elements.progressFilled.style.width = `${(currentTime / duration) * 100}%`;
@@ -475,13 +474,7 @@
                 this.elements.playModeBtn.innerHTML = mode.icon;
                 this.elements.playModeBtn.title = mode.title;
             }
-            _updateVolumeUI = () => {
-                const { volume, muted } = this.audio;
-                this.elements.volumeSlider.value = muted ? 0 : volume * 100;
-                if (muted || volume === 0) this.elements.volumeBtn.innerHTML = ICONS.volume.off;
-                else if (volume < 0.5) this.elements.volumeBtn.innerHTML = ICONS.volume.low;
-                else this.elements.volumeBtn.innerHTML = ICONS.volume.high;
-            }
+            
             _setupIcons() {
                 this.elements.rewindBtn.innerHTML = ICONS.rewind;
                 this.elements.forwardBtn.innerHTML = ICONS.forward;
@@ -519,26 +512,12 @@
                 this.state.playMode = this.PLAY_MODES[(currentModeIndex + 1) % this.PLAY_MODES.length];
                 this._updatePlayModeUI();
             }
-            _toggleMute = () => {
-                if (this.audio.muted) {
-                    this.audio.muted = false;
-                    this.audio.volume = this.state.preMuteVolume;
-                } else {
-                    this.state.preMuteVolume = this.audio.volume;
-                    this.audio.muted = true;
-                }
-            }
 
-            // 修改：使用模态框替代 prompt
             _handleSleepTimerChange = (e) => {
                 const minutes = parseInt(e.target.value, 10);
-                if (minutes === -1) {
-                    this._showCustomTimerModal();
-                } else if (minutes > 0) {
-                    this._setSleepTimer(minutes);
-                } else {
-                    this._clearSleepTimer();
-                }
+                if (minutes === -1) { this._showCustomTimerModal(); }
+                else if (minutes > 0) { this._setSleepTimer(minutes); }
+                else { this._clearSleepTimer(); }
             }
             
             _handleAudioError = () => {
@@ -564,8 +543,7 @@
             _setError(msg) { this.elements.status.textContent = msg; }
             _formatTime = (seconds) => {
                 if (isNaN(seconds) || seconds < 0) return '00:00';
-                const date = new Date(null);
-                date.setSeconds(seconds);
+                const date = new Date(null); date.setSeconds(seconds);
                 const isoString = date.toISOString();
                 return seconds >= 3600 ? isoString.substr(11, 8) : isoString.substr(14, 5);
             }
@@ -596,7 +574,6 @@
                     this.elements.sleepTimerDisplay.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
                 }
             }
-            // 新增：模态框控制方法
             _showCustomTimerModal = () => {
                 this.elements.customTimerInput.value = '';
                 this.elements.customTimerModal.classList.add('visible');
@@ -604,7 +581,6 @@
             }
             _hideCustomTimerModal = () => {
                 this.elements.customTimerModal.classList.remove('visible');
-                // 如果用户取消，将下拉菜单重置回"定时停止"
                 if (this.elements.sleepTimerSelect.value === "-1") {
                     this.elements.sleepTimerSelect.value = "0";
                 }
@@ -615,10 +591,54 @@
                     this._setSleepTimer(minutes);
                     this._hideCustomTimerModal();
                 } else {
-                    // 可选：给用户一个错误提示
                     this.elements.customTimerInput.style.border = '1px solid red';
                     setTimeout(() => { this.elements.customTimerInput.style.border = ''; }, 1500);
                 }
+            }
+
+            // 问题3 新增：Web Audio API 相关方法
+            _initWebAudio() {
+                if (this.audioContextInitialized) return;
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                this.audioSource = this.audioContext.createMediaElementSource(this.audio);
+                this.gainNode = this.audioContext.createGain();
+                this.audioSource.connect(this.gainNode);
+                this.gainNode.connect(this.audioContext.destination);
+                this.audio.volume = 1; // 让 GainNode 完全控制音量
+                this._setVolume(100); // 同步初始音量
+                this.audioContextInitialized = true;
+            }
+
+            _setVolume(value) { // value is from 0-150
+                if (!this.audioContextInitialized) this._initWebAudio();
+                const newGain = value / 100;
+                this.gainNode.gain.value = newGain;
+                this._updateVolumeUI();
+            }
+
+            _toggleMute = () => {
+                if (!this.audioContextInitialized) this._initWebAudio();
+                if (this.gainNode.gain.value > 0) {
+                    this.state.preMuteVolume = this.elements.volumeSlider.value;
+                    this._setVolume(0);
+                } else {
+                    this._setVolume(this.state.preMuteVolume);
+                }
+            }
+
+            _updateVolumeUI = () => {
+                const slider = this.elements.volumeSlider;
+                if (!this.audioContextInitialized) { // 初始化前的简单UI
+                    slider.value = 100;
+                    this.elements.volumeBtn.innerHTML = ICONS.volume.high;
+                    return;
+                }
+                const currentGain = this.gainNode.gain.value;
+                slider.value = Math.round(currentGain * 100);
+
+                if (currentGain === 0) this.elements.volumeBtn.innerHTML = ICONS.volume.off;
+                else if (currentGain < 0.5) this.elements.volumeBtn.innerHTML = ICONS.volume.low;
+                else this.elements.volumeBtn.innerHTML = ICONS.volume.high;
             }
         }
 
