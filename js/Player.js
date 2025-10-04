@@ -48,16 +48,13 @@ export class Player {
         };
     }
 
-    // --- V9 优化：重写 URL 解析逻辑 ---
     _reconstructUrl(data) {
         if (typeof data === 'string') {
-            return data;
+            // Handle cases where a key might be the string itself
+            return URL_DICTIONARY[data] || data;
         }
         if (Array.isArray(data)) {
             return data.map(part => this._reconstructUrl(part)).join('');
-        }
-        if (URL_DICTIONARY[data]) {
-            return URL_DICTIONARY[data];
         }
         return '';
     }
@@ -72,12 +69,14 @@ export class Player {
                 const jsonString = pako.inflate(compressed, { to: 'string' });
                 const data = JSON.parse(jsonString);
 
-                // --- V9 Payload Decoding ---
+                // --- 修复：确保 baseUrl 被正确传递和使用 ---
                 const baseUrl = this._reconstructUrl(data.b || '');
-
-                this._updateWorkInfo(data);
+                
+                // 1. 将 baseUrl 传递给 _updateWorkInfo
+                this._updateWorkInfo(data, baseUrl);
                 
                 if (data.t && Array.isArray(data.t)) {
+                    // 2. 在这里也使用正确的 baseUrl
                     this.state.tracks = data.t.map(trackArr => ({
                         src: baseUrl + trackArr[0], 
                         title: trackArr[1] 
@@ -92,10 +91,18 @@ export class Player {
         }
     }
 
-    _updateWorkInfo(data) {
-        // --- V9 Payload Decoding ---
+    // --- 修复：接收 baseUrl 作为参数 ---
+    _updateWorkInfo(data, baseUrl = '') {
         if (data.c) {
-            const fullCoverUrl = this._reconstructUrl(data.c);
+            let fullCoverUrl = '';
+            // 封面URL自己的重组逻辑，它不依赖于音轨的baseUrl
+            if (Array.isArray(data.c)) { 
+                const [keys, path] = data.c;
+                const prefix = this._reconstructUrl(keys);
+                fullCoverUrl = prefix + path;
+            } else { 
+                fullCoverUrl = data.c;
+            }
             this.elements.coverArt.src = fullCoverUrl;
             this.elements.backgroundArt.style.backgroundImage = `url(${fullCoverUrl})`;
             this.elements.backgroundArt.style.opacity = '1';
@@ -298,7 +305,7 @@ export class Player {
         }
     }
     _buildPlaylist() {
-        this.elements.playlist.innerHTML = this.state.tracks.map((track, i) => `<li data-index="${i}"><span class="track-index">${i + 1}.</span><span class="track-title">${track.title}</span></li>`).join('');
+        this.elements.playlist.innerHTML = this.state.tracks.map((track, i) => `<li data-index="${i}"><span class="track-index">${i + 1}.</span><span class.track-title">${track.title}</span></li>`).join('');
     }
     _updatePlaylistActive() {
          this.elements.playlist.querySelectorAll('li').forEach((li, i) => li.classList.toggle('active', i === this.state.currentIndex));
