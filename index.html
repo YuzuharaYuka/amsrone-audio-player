@@ -1,11 +1,11 @@
+<!-- START OF FILE index.html -->
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ASMR ONE 在线播放器</title>
-    <!-- 引入 pako 库 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
     <!-- 链接外部 CSS 文件 -->
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -39,14 +39,15 @@
                     <div class="time-display"><span id="current-time">00:00</span><span id="total-duration">00:00</span></div>
                     <div class="main-controls">
                         <button id="play-mode-btn" title="顺序播放"></button>
-                        <button id="rewind-btn" title="后退10秒"></button>
+                        <!-- **FIX**: Reordered buttons for better ergonomics and symmetry -->
                         <button id="prev-track" title="上一曲"></button>
+                        <button id="rewind-btn" title="后退10秒"></button>
                         <button id="play-pause-btn" class="play-pause-btn" title="播放/暂停">
                             <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                            <svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                            <svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="hidden"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                         </button>
-                        <button id="next-track" title="下一曲"></button>
                         <button id="forward-btn" title="快进10秒"></button>
+                        <button id="next-track" title="下一曲"></button>
                         <button id="download-track" title="下载当前音轨"></button>
                     </div>
                 </div>
@@ -54,14 +55,13 @@
                 <div class="extra-controls">
                     <div class="volume-control">
                         <button id="volume-btn" title="静音"></button>
-                        <!-- 修改：最大音量调整为 200 -->
-                        <input type="range" id="volume-slider" class="volume-slider" min="0" max="200" value="100">
+                        <input type="range" id="volume-slider" class="volume-slider" min="0" max="200" value="100" aria-label="音量">
                     </div>
                     <div class="secondary-controls">
-                        <select id="playback-rate">
+                        <select id="playback-rate" aria-label="播放速度">
                             <option value="0.75">0.75x</option><option value="1" selected>1.0x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="2.0">2.0x</option>
                         </select>
-                        <select id="sleep-timer-select">
+                        <select id="sleep-timer-select" aria-label="定时停止">
                             <option value="0">定时停止</option><option value="15">15分钟</option><option value="30">30分钟</option><option value="60">60分钟</option><option value="90">90分钟</option><option value="-1">自定义...</option>
                         </select>
                         <span id="sleep-timer-display"></span>
@@ -76,7 +76,7 @@
 
     <button class="theme-toggle" id="theme-toggle" title="切换主题">
         <svg id="icon-sun" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
-        <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="display:none;"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
+        <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="hidden"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
     </button>
     
     <div id="custom-timer-modal" class="modal-overlay">
@@ -95,3 +95,4 @@
     <script type="module" src="js/main.js"></script>
 </body>
 </html>
+<!-- END OF FILE index.html -->

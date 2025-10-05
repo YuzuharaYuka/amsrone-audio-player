@@ -1,3 +1,5 @@
+// --- START OF FILE js/constants.js ---
+
 // --- V9 Payload 新增: 分段式 URL 字典 ---
 // 这份字典必须与插件后端的字典完全一致
 export const URL_DICTIONARY = {
@@ -19,8 +21,9 @@ export const URL_DICTIONARY = {
 };
 
 export const ICONS = {
-    rewind: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 4.5v15l-8-7.5 8-7.5zm-1 2.69L7.44 12l4.06 4.81V7.19zM20.5 4.5v15l-8-7.5 8-7.5zm-1 2.69L15.44 12l4.06 4.81V7.19z"/></svg>`,
-    forward: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 19.5v-15l8 7.5-8 7.5zm1-2.69L8.56 12 5 7.19v9.62zM12 19.5v-15l8 7.5-8 7.5zm1-2.69L16.56 12 13 7.19v9.62z"/></svg>`,
+    // FIX: Redesigned for visual consistency with other controls.
+    rewind: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20 5v14l-8-7 8-7zm-8 0v14l-8-7 8-7z"/></svg>`,
+    forward: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 5v14l8-7-8-7zm8 0v14l8-7-8-7z"/></svg>`,
     prev: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>`,
     next: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>`,
     download: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>`,
@@ -36,3 +39,4 @@ export const ICONS = {
         shuffle: { icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>`, title: '随机播放'},
     }
 };
+// --- END OF FILE js/constants.js ---
