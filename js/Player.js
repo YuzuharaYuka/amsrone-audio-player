@@ -1,7 +1,8 @@
 // --- START OF FILE js/Player.js ---
 
 import * as pako from 'https://esm.sh/pako@2.1.0';
-import { reconstructUrl } from './utils.js';
+// 增强：引入新的带回退功能的图片加载器
+import { reconstructUrl, loadImageWithFallback } from './utils.js';
 import { UIManager } from './UIManager.js';
 import { AudioService } from './AudioService.js';
 import { EventHandler } from './EventHandler.js';
@@ -38,7 +39,7 @@ export class Player {
         this._parseDataFromURL();
     }
     
-    _parseDataFromURL() {
+    async _parseDataFromURL() {
          try {
             const params = new URLSearchParams(window.location.search);
             const payloadParam = params.get('p');
@@ -50,17 +51,52 @@ export class Player {
             const jsonString = pako.inflate(compressed, { to: 'string' });
             const data = JSON.parse(jsonString);
 
-            this.ui.updateWorkInfo({
-                title: data.w,
-                rjCode: 'RJ' + String(parseInt(data.r, 36)).padStart(8, '0'),
-                coverUrl: reconstructUrl(data.c),
-            });
+            // --- V12 PAYLOAD IMPLEMENTATION (with backward compatibility) ---
+            if (Array.isArray(data)) {
+                // V12 Payload (Array format)
+                const [workTitle, rjCode_b36, compressedCover, compressedBase, tracksData] = data;
+                
+                // 1. 立即更新文本信息
+                this.ui.updateWorkInfo({
+                    title: workTitle,
+                    rjCode: 'RJ' + String(parseInt(rjCode_b36, 36)).padStart(8, '0'),
+                });
+
+                // 2. 异步加载封面，并使用回退机制
+                loadImageWithFallback(compressedCover)
+                    .then(url => this.ui.updateCoverArt(url))
+                    .catch(err => console.error(err.message));
+
+                const baseUrl = reconstructUrl(compressedBase);
+                this.state.tracks = tracksData.map(trackArr => ({
+                    src: baseUrl + encodeURIComponent(trackArr[0]),
+                    title: trackArr[1]
+                }));
+
+            } else {
+                // V10/V11 Payload (Object format) - Fallback for old links
+                this.ui.updateWorkInfo({
+                    title: data.w,
+                    rjCode: 'RJ' + String(parseInt(data.r, 36)).padStart(8, '0'),
+                    coverUrl: reconstructUrl(data.c), // 旧版直接重构URL
+                });
+
+                if (!data.t || !Array.isArray(data.t)) throw new Error('音轨数据格式不正确');
+
+                if (data.b) { // V11
+                    this.state.tracks = data.t.map(trackArr => ({
+                        src: data.b + encodeURIComponent(trackArr[0]),
+                        title: trackArr[1] 
+                    }));
+                } else { // V10
+                    this.state.tracks = data.t.map(trackArr => ({
+                        src: reconstructUrl(trackArr[0]), 
+                        title: trackArr[1] 
+                    }));
+                }
+            }
+            // --- END OF IMPLEMENTATION ---
             
-            if (!data.t || !Array.isArray(data.t)) throw new Error('音轨数据格式不正确');
-            
-            this.state.tracks = data.t.map(trackArr => ({
-                src: reconstructUrl(trackArr[0]), title: trackArr[1] 
-            }));
             this.ui.buildPlaylist(this.state.tracks);
             this.loadTrack(0);
 
@@ -93,7 +129,6 @@ export class Player {
         this.ui.updatePlayPauseUI(isPlaying);
         const statusText = `(音轨 ${this.state.currentIndex + 1}/${this.state.tracks.length})`;
         this.ui.updateStatus(isPlaying ? `播放中... ${statusText}` : `已暂停 ${statusText}`);
-        // Preload trigger is removed
     }
 
     handleAudioProgress = (currentTime, duration, bufferedPercent) => {

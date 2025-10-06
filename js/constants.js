@@ -4,9 +4,9 @@
 // 这份字典必须与插件后端的字典完全一致
 export const URL_DICTIONARY = {
 // d0-d9: API & Cover Domains
-'d0': 'https://api.asmr-200.com/api/',
-'d1': 'https://api.asmr.one/api/',
-'d2': 'https://api.asmr-100.com/api/',
+'d0': 'https://api.asmr.one/api/',
+'d1': 'https://api.asmr-100.com/api/',
+'d2': 'https://api.asmr-200.com/api/',
 'd3': 'https://api.asmr-300.com/api/',
 
 // a0-a9: Audio CDN Domains
@@ -19,9 +19,8 @@ export const URL_DICTIONARY = {
 'p1': 'media/download/',
 'p2': 'media/stream/',
 };
-
+// ... (ICONS部分保持不变)
 export const ICONS = {
-    // FIX: Redesigned for visual consistency with other controls.
     rewind: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20 5v14l-8-7 8-7zm-8 0v14l-8-7 8-7z"/></svg>`,
     forward: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 5v14l8-7-8-7zm8 0v14l8-7-8-7z"/></svg>`,
     prev: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>`,

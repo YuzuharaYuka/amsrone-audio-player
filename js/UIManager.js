@@ -24,7 +24,6 @@ export class UIManager {
             themeToggleBtn: $('theme-toggle'), iconSun: $('icon-sun'), iconMoon: $('icon-moon'),
             customTimerModal: $('custom-timer-modal'), customTimerInput: $('custom-timer-input'),
             customTimerSetBtn: $('custom-timer-set'), customTimerCancelBtn: $('custom-timer-cancel'),
-            // **FIX**: Add the missing rateSelector element.
             rateSelector: $('playback-rate'),
         };
     }
@@ -37,18 +36,23 @@ export class UIManager {
         this.elements.downloadBtn.innerHTML = ICONS.download;
     }
 
-    updateWorkInfo({ title, rjCode, coverUrl }) {
-        if (coverUrl) {
-            this.elements.coverArt.src = coverUrl;
-            this.elements.backgroundArt.style.backgroundImage = `url(${coverUrl})`;
-            this.elements.backgroundArt.style.opacity = '1';
-        }
+    // 拆分1: 只更新文本信息
+    updateWorkInfo({ title, rjCode }) {
         if (title) {
             this.elements.workTitle.textContent = title;
             document.title = `${title} | ASMR ONE Player`;
         }
         if (rjCode) {
             this.elements.rjCode.textContent = rjCode;
+        }
+    }
+
+    // 拆分2: 专门更新封面图片
+    updateCoverArt(coverUrl) {
+        if (coverUrl) {
+            this.elements.coverArt.src = coverUrl;
+            this.elements.backgroundArt.style.backgroundImage = `url(${coverUrl})`;
+            this.elements.backgroundArt.style.opacity = '1';
         }
     }
 
