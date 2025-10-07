@@ -68,25 +68,48 @@ export class Player {
                     .catch(err => console.error(err.message));
 
                 const baseUrl = reconstructUrl(compressedBase);
+                
+                // --- BUG FIX START ---
+                // 旧的错误代码:
+                // this.state.tracks = tracksData.map(trackArr => ({
+                //     src: baseUrl + encodeURIComponent(trackArr[0]),
+                //     title: trackArr[1]
+                // }));
+                
+                // 修正后的代码:
+                // 将相对路径按'/'分割，对每个部分单独编码，再用'/'拼接回来
                 this.state.tracks = tracksData.map(trackArr => ({
-                    src: baseUrl + encodeURIComponent(trackArr[0]),
+                    src: baseUrl + trackArr[0].split('/').map(encodeURIComponent).join('/'),
                     title: trackArr[1]
                 }));
+                // --- BUG FIX END ---
+
 
             } else {
                 // V10/V11 Payload (Object format) - Fallback for old links
                 this.ui.updateWorkInfo({
                     title: data.w,
                     rjCode: 'RJ' + String(parseInt(data.r, 36)).padStart(8, '0'),
-                    coverUrl: reconstructUrl(data.c), // 旧版直接重构URL
                 });
+                
+                // 旧版逻辑也需要应用相同的修复
+                const coverUrl = reconstructUrl(data.c);
+                this.ui.updateCoverArt(coverUrl);
 
                 if (!data.t || !Array.isArray(data.t)) throw new Error('音轨数据格式不正确');
-
+                
+                // --- BUG FIX START (for backward compatibility) ---
                 if (data.b) { // V11
+                    // 旧的错误代码:
+                    // this.state.tracks = data.t.map(trackArr => ({
+                    //     src: data.b + encodeURIComponent(trackArr[0]),
+                    //     title: trackArr[1] 
+                    // }));
+
+                    // 修正后的代码:
                     this.state.tracks = data.t.map(trackArr => ({
-                        src: data.b + encodeURIComponent(trackArr[0]),
-                        title: trackArr[1] 
+                        src: data.b + trackArr[0].split('/').map(encodeURIComponent).join('/'),
+                        title: trackArr[1]
                     }));
                 } else { // V10
                     this.state.tracks = data.t.map(trackArr => ({
@@ -94,6 +117,7 @@ export class Player {
                         title: trackArr[1] 
                     }));
                 }
+                // --- BUG FIX END ---
             }
             // --- END OF IMPLEMENTATION ---
             
